@@ -1,0 +1,72 @@
+{
+    "schemaVersion": "1.40.0",
+    "class": "Device",
+    "async": true,
+    "label": "F5 AWAF Test Lab - Declarative Onboarding",
+    "Common": {
+        "class": "Tenant",
+        "hostname": "bigip-lab.local",
+        "myDns": {
+            "class": "DNS",
+            "nameServers": [
+                "8.8.8.8",
+                "1.1.1.1"
+            ]
+        },
+        "myNtp": {
+            "class": "NTP",
+            "servers": [
+                "0.pool.ntp.org",
+                "1.pool.ntp.org"
+            ],
+            "timezone": "Asia/Seoul"
+        },
+        "myProvisioning": {
+            "class": "Provision",
+{% if lab.do.provision_awaf %}
+            "awaf": "nominal",
+{% endif %}
+{% if lab.do.provision_ltm %}
+            "ltm": "nominal",
+{% endif %}
+            "asm": "nominal"
+        },
+        "myVlan": {
+            "class": "VLAN",
+            "tag": 10,
+            "interfaces": [
+                {
+                    "name": "1.1",
+                    "tagged": false
+                }
+            ]
+        },
+        "mySelfIp": {
+            "class": "SelfIp",
+            "address": "192.168.1.245/24",
+            "vlan": "myVlan",
+            "allowService": "all"
+        },
+        "myRoute": {
+            "class": "Route",
+            "gateway": "192.168.1.1",
+            "network": "0.0.0.0/0"
+        },
+        "myAdmin": {
+            "class": "User",
+            "userType": "regular",
+            "password": "{{ lab.bigip.password }}",
+            "shell": "tmsh",
+            "partitionAccess": [
+                {
+                    "name": "Common",
+                    "role": "admin"
+                },
+                {
+                    "name": "AWAF_Lab",
+                    "role": "admin"
+                }
+            ]
+        }
+    }
+}

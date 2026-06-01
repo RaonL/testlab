@@ -1,0 +1,218 @@
+# =============================================================================
+# Brute Force Test Cases
+# =============================================================================
+# DVWA의 Brute Force 취약점을 통해 WAF의 무차별 대입 공격 탐지
+# 및 Rate Limiting 능력을 검증합니다.
+# =============================================================================
+
+category: "brute_force"
+name: "Brute Force"
+description: "브루트 포스 (무차별 대입) 공격 탐지 테스트"
+severity: "high"
+icon: "🔑
+
+tests:
+  # --- 기본 Brute Force (로그인) ---
+  - id: "bf-001"
+    description: "Brute Force - admin 로그인 시도 1"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "12345"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-002"
+    description: "Brute Force - admin 로그인 시도 2"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "password"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-003"
+    description: "Brute Force - admin 로그인 시도 3"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "12345678"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-004"
+    description: "Brute Force - admin 로그인 시도 4"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "qwerty"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-005"
+    description: "Brute Force - admin 로그인 시도 5"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "admin123"
+      Login: "Login"
+    severity: "high"
+
+  # --- 다양한 사용자명 ---
+  - id: "bf-006"
+    description: "Brute Force - root 로그인"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "root"
+      password: "toor"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-007"
+    description: "Brute Force - guest 로그인"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "guest"
+      password: "guest"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-008"
+    description: "Brute Force - manager 로그인"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "manager"
+      password: "manager"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-009"
+    description: "Brute Force - test 로그인"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "test"
+      password: "test123"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-010"
+    description: "Brute Force - supervisor 로그인"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "supervisor"
+      password: "super123"
+      Login: "Login"
+    severity: "medium"
+
+  # --- 다양한 비밀번호 패턴 ---
+  - id: "bf-011"
+    description: "Brute Force - 일반 패턴 1"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "iloveyou"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-012"
+    description: "Brute Force - 일반 패턴 2"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "monkey"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-013"
+    description: "Brute Force - 일반 패턴 3"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "dragon"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-014"
+    description: "Brute Force - 일반 패턴 4"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "master"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-015"
+    description: "Brute Force - 일반 패턴 5"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "123456789"
+      Login: "Login"
+    severity: "medium"
+
+  # --- POST 방식 Brute Force ---
+  - id: "bf-016"
+    description: "Brute Force - POST 전송"
+    method: "POST"
+    path: "/login.php"
+    params:
+      username: "admin"
+      password: "letmein"
+      submit: "Login"
+    severity: "high"
+
+  - id: "bf-017"
+    description: "Brute Force - POST 전송 2"
+    method: "POST"
+    path: "/login.php"
+    params:
+      username: "admin"
+      password: "welcome"
+      submit: "Login"
+    severity: "high"
+
+  # --- 계정 목록 기반 ---
+  - id: "bf-018"
+    description: "Brute Force - 운영자 계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "operator"
+      password: "op12345"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-019"
+    description: "Brute Force - DBA 계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "dba"
+      password: "dba_pass"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-020"
+    description: "Brute Force - 시스템 계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "sysadmin"
+      password: "sys1234"
+      Login: "Login"
+    severity: "high"

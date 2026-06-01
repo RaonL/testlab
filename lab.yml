@@ -1,0 +1,74 @@
+# =============================================================================
+# F5 AWAF Test Lab Factory - Lab Configuration
+# =============================================================================
+# 이 파일은 테스트랩의 BIG-IP 연결 정보와 테스트 환경 설정을 정의합니다.
+# 사용 환경에 맞게 값을 수정한 후 스크립트를 실행하세요.
+
+# --- BIG-IP 연결 정보 ---
+bigip:
+  host: "192.168.1.245"            # BIG-IP 관리 IP 주소
+  username: "admin"                 # BIG-IP 관리 계정
+  password: "admin"                 # BIG-IP 관리 비밀번호
+  port: 443                         # 관리 포트 (기본 443)
+  validate_certs: false             # SSL 인증서 검증 여부
+
+# --- 테스트 대상 애플리케이션 (DVWA) ---
+target:
+  # DVWA가 배포될 VIP 정보
+  vip_address: "192.168.1.100"      # Virtual Server IP
+  vip_port: 80                      # Virtual Server Port
+  service_port: 8080                # 실제 DVWA 컨테이너 포트
+
+  # DVWA 접속 정보 (테스트용)
+  dvwa:
+    url: "http://192.168.1.100"     # VIP를 통한 DVWA 접속 URL
+    username: "admin"
+    password: "password"
+    security_level: "low"            # low / medium / high (low가 가장 취약)
+
+# --- AS3 Tenant/Application 정보 ---
+as3:
+  tenant: "AWAF_Lab"
+  application: "dvwa_app"
+  as3_url: "https://{{ bigip.host }}:{{ bigip.port }}/mgmt/shared/appsvcs/declare"
+
+# --- DO (Declarative Onboarding) 설정 ---
+do:
+  do_url: "https://{{ bigip.host }}:{{ bigip.port }}/mgmt/shared/declarative-onboarding"
+  provision_awaf: true               # AWAF 프로비저닝 여부
+  provision_ltm: true                # LTM 프로비저닝 여부
+
+# --- 공격 테스트 설정 ---
+attack_tests:
+  # 각 테스트 간 대기 시간 (초)
+  delay_between_tests: 1
+
+  # 테스트 timeout (초)
+  test_timeout: 30
+
+  # 공격 소스 IP (BIG-IP 로그에서 식별용)
+  source_ip: "192.168.1.10"
+
+  # User-Agent (WAF 바이패스 방지용 랜덤 User-Agent 사용)
+  random_user_agent: true
+
+  # 테스트 반복 횟수 (안정적인 탐지를 위해 여러 번 전송)
+  repeat_count: 3
+
+# --- 로그 수집 설정 ---
+log_collection:
+  # 수집할 로그 타입
+  types:
+    - security                   # Security Policy violations
+    - audit                      # Audit logs
+    - request                    # HTTP request logs
+
+  # 로그 조회 기간 (분, 테스트 전후로 수집)
+  lookback_minutes: 30
+
+# --- 리포트 설정 ---
+report:
+  title: "F5 AWAF Security Test Report"
+  output_file: "reports/result.html"
+  include_raw_logs: false
+  chart_enabled: true

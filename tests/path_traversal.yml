@@ -1,0 +1,178 @@
+# =============================================================================
+# Path Traversal (Directory Traversal) Test Cases
+# =============================================================================
+# DVWA의 File Inclusion 페이지를 통해 Path Traversal 취약점을
+# 테스트하고 WAF 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "path_traversal"
+name: "Path Traversal"
+description: "경로 탐색 (Path/Directory Traversal) 공격 탐지 테스트"
+severity: "high"
+icon: "📁"
+
+tests:
+  # --- 기본 Path Traversal ---
+  - id: "pt-001"
+    description: "Path Traversal - ../../etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../etc/passwd"
+    severity: "critical"
+
+  - id: "pt-002"
+    description: "Path Traversal - ../../../../etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/passwd"
+    severity: "critical"
+
+  - id: "pt-003"
+    description: "Path Traversal - ../../../../../../etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../../../etc/passwd"
+    severity: "critical"
+
+  - id: "pt-004"
+    description: "Path Traversal - C:\\Windows\\System32"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "C:\\Windows\\System32\\drivers\\etc\\hosts"
+    severity: "high"
+
+  - id: "pt-005"
+    description: "Path Traversal - 절대 경로 /etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "/etc/passwd"
+    severity: "high"
+
+  # --- 인코딩 우회 ---
+  - id: "pt-006"
+    description: "Path Traversal - URL 인코딩 %2e%2e%2f"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd"
+    severity: "high"
+
+  - id: "pt-007"
+    description: "Path Traversal - 이중 URL 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%252e%252e%252f%252e%252e%252fetc/passwd"
+    severity: "medium"
+
+  - id: "pt-008"
+    description: "Path Traversal - 16진수 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "..%252f..%252f..%252fetc/passwd"
+    severity: "medium"
+
+  - id: "pt-009"
+    description: "Path Traversal - Unicode 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "..%c0%ae..%c0%ae..%c0%aefetc/passwd"
+    severity: "medium"
+
+  # --- 다양한 OS 경로 ---
+  - id: "pt-010"
+    description: "Path Traversal - /etc/shadow"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/shadow"
+    severity: "critical"
+
+  - id: "pt-011"
+    description: "Path Traversal - /root/.ssh/id_rsa"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../root/.ssh/id_rsa"
+    severity: "critical"
+
+  - id: "pt-012"
+    description: "Path Traversal - /var/www/html/config.php"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../var/www/html/config.php"
+    severity: "critical"
+
+  - id: "pt-013"
+    description: "Path Traversal - /var/log/mysql/error.log"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../var/log/mysql/error.log"
+    severity: "high"
+
+  - id: "pt-014"
+    description: "Path Traversal - /etc/nginx/sites-enabled/default"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/nginx/sites-enabled/default"
+    severity: "high"
+
+  # --- 우회 기법 ---
+  - id: "pt-015"
+    description: "Path Traversal - ..././..././..././
+"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "..././..././..././etc/passwd"
+    severity: "medium"
+
+  - id: "pt-016"
+    description: "Path Traversal - ....//....//....//"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "....//....//....//etc/passwd"
+    severity: "medium"
+
+  - id: "pt-017"
+    description: "Path Traversal - ..\\..\\..\\ (백슬래시)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "..\\..\\..\\etc\\passwd"
+    severity: "medium"
+
+  - id: "pt-018"
+    description: "Path Traversal - Null Byte %00"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/passwd%00"
+    severity: "high"
+
+  - id: "pt-019"
+    description: "Path Traversal - /proc/self/fd/ (로그)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../proc/self/fd/12"
+    severity: "high"
+
+  - id: "pt-020"
+    description: "Path Traversal - .htaccess"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../.htaccess"
+    severity: "high"

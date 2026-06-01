@@ -1,0 +1,87 @@
+{
+    "class": "AS3",
+    "action": "deploy",
+    "persist": true,
+    "declaration": {
+        "class": "ADC",
+        "schemaVersion": "3.50.0",
+        "id": "urn:uuid:awaf-lab-dvwa-deployment",
+        "label": "F5 AWAF Test Lab - DVWA + WAF Policy",
+        "remark": "DVWA 애플리케이션 배포 및 AWAF WAF 정책 적용",
+
+        "{{ lab.as3.tenant }}": {
+            "class": "Tenant",
+            "defaultRouteDomain": 0,
+
+            "{{ lab.as3.application }}": {
+                "class": "Application",
+                "template": "generic",
+
+                # --- WAF 정책 (보안) ---
+                "myWafPolicy": {
+                    "class": "WAF_Policy",
+                    "url": "file:///var/config/rest/iapps/as3/declarations/waf_policy_template.json",
+                    "ignoreChanges": true
+                },
+
+                # --- Backend Pool (DVWA) ---
+                "dvwaPool": {
+                    "class": "Pool",
+                    "monitors": [
+                        "http"
+                    ],
+                    "members": [
+                        {
+                            "servicePort": {{ lab.target.service_port }},
+                            "serverAddresses": [
+                                "10.1.10.10"
+                            ]
+                        }
+                    ]
+                },
+
+                # --- HTTP Virtual Server (클라이언트 진입점) ---
+                "dvwaVirtualServer": {
+                    "class": "Service_HTTP",
+                    "virtualAddresses": [
+                        "{{ lab.target.vip_address }}"
+                    ],
+                    "virtualPort": {{ lab.target.vip_port }},
+                    "pool": "dvwaPool",
+                    "policyWAF": {
+                        "use": "myWafPolicy"
+                    },
+                    "securityLogProfiles": [
+                        {
+                            "use": "myLogProfile"
+                        }
+                    ],
+                    "profileHTTP": {
+                        "use": "myHttpProfile"
+                    },
+                    "snat": "auto"
+                },
+
+                # --- HTTP Profile ---
+                "myHttpProfile": {
+                    "class": "HTTP_Profile",
+                    "xForwardedFor": true,
+                    "insertXforwardedFor": true
+                },
+
+                # --- Log Profile (ASM/WAF 로깅) ---
+                "myLogProfile": {
+                    "class": "Security_Log_Profile",
+                    "applicationSecurity": {
+                        "localStorage": true,
+                        "logFormat": "json",
+                        "logBodyEnabled": true,
+                        "logHeadersEnabled": true,
+                        "maxEntryAge": 60,
+                        "storageFormat": "fields"
+                    }
+                }
+            }
+        }
+    }
+}

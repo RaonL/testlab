@@ -1,0 +1,127 @@
+{
+    "name": "awaf-lab-policy",
+    "template": "POLICY_TEMPLATE_FUNDAMENTAL",
+    "description": "F5 AWAF Test Lab - WAF 보안 정책 (SQLi, XSS, File Inclusion 등 탐지)",
+    "applicationLanguage": "utf-8",
+    "enforcementMode": "transparent",
+    "blocking-settings": {
+        "violations": [
+            {
+                "name": "VIOLATION_SQL_INJECTION",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_XSS",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_HTTP_METHOD",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_FILE_TYPE",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_PARAMETER_VALUE",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_PARAMETER_NAME",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_URL",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_MANDATORY_PARAMETER",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_JSON_MALFORMED",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_COOKIE_MALFORMED",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_PARAMETER_DATA_TYPE",
+                "block": false,
+                "alarm": true
+            },
+            {
+                "name": "VIOLATION_PARAMETER_STATIC_VALUE",
+                "block": false,
+                "alarm": true
+            }
+        ]
+    },
+    "signature-settings": {
+        "signatureStaging": false,
+        "minimumAccuracy": "high"
+    },
+    "server-technologies": [
+        {
+            "serverTechnologyName": "PHP",
+            "serverTechnologyReference": {
+                "link": "https://www.php.net"
+            }
+        },
+        {
+            "serverTechnologyName": "Apache HTTP Server",
+            "serverTechnologyReference": {
+                "link": "https://httpd.apache.org"
+            }
+        },
+        {
+            "serverTechnologyName": "MySQL",
+            "serverTechnologyReference": {
+                "link": "https://www.mysql.com"
+            }
+        }
+    ],
+    "character-sets": [
+        {
+            "characterSet": "utf-8"
+        }
+    ],
+    "signature-sets": [
+        {
+            "name": "SQL Injection Signatures (High/Low Accuracy)",
+            "block": false,
+            "alarm": true
+        },
+        {
+            "name": "Cross Site Scripting (XSS) Signatures (High/Low Accuracy)",
+            "block": false,
+            "alarm": true
+        },
+        {
+            "name": "Generic Detection Signatures (High/Low Accuracy)",
+            "block": false,
+            "alarm": true
+        },
+        {
+            "name": "Command Execution Signatures (High/Low Accuracy)",
+            "block": false,
+            "alarm": true
+        },
+        {
+            "name": "Path Traversal Signatures (High/Low Accuracy)",
+            "block": false,
+            "alarm": true
+        }
+    ]
+}

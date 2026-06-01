@@ -1,0 +1,27 @@
+# =============================================================================
+# F5 AWAF Test Lab Factory - Python Dependencies
+# =============================================================================
+# 설치 방법: pip install -r requirements.txt
+
+# --- BIG-IP 자동화 SDK ---
+f5-icontrol-rest>=1.7.0            # BIG-IP iControl REST API SDK
+bigrest>=0.9.0                     # BIG-IP REST API 래퍼 (DO/AS3)
+
+# --- 설정 파일 처리 ---
+pyyaml>=6.0                        # YAML 설정 파일 파싱
+jinja2>=3.1                        # JSON 템플릿 렌더링
+
+# --- HTTP 통신 ---
+requests>=2.31.0                   # HTTP 요청
+urllib3>=2.0                       # HTTP 연결 풀링 (경고 억제 용이)
+
+# --- 리포트 생성 ---
+jinja2>=3.1                        # HTML 리포트 템플릿
+markdown>=3.5                      # (선택) 마크다운 변환
+
+# --- 유틸리티 ---
+python-dateutil>=2.8               # 날짜/시간 파싱
+colorama>=0.4                      # 컬러 터미널 출력
+
+# --- Docker (선택, 로컬 DVWA 실행용) ---
+# docker>=6.0                       # Docker SDK for Python (필요시 주석 해제)

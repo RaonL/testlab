@@ -1,0 +1,34 @@
+# =============================================================================
+# F5 AWAF Test Lab Factory - Docker Compose
+# =============================================================================
+# 로컬 개발 환경에서 DVWA(Damn Vulnerable Web Application)를 실행하여
+# AWAF WAF 정책 테스트를 수행할 수 있도록 합니다.
+#
+# 사용법:
+#   docker-compose up -d          # DVWA 컨테이너 실행
+#   docker-compose down           # 컨테이너 중지 및 삭제
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # --- DVWA (Damn Vulnerable Web Application) ---
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    container_name: f5-dvwa-target
+    restart: unless-stopped
+    ports:
+      # 호스트 포트 : 컨테이너 포트
+      # lab.yml의 target.service_port와 일치시켜야 함
+      - "8080:80"
+    environment:
+      - DVWA_RECAPTCHA=disabled    # reCAPTCHA 비활성화 (테스트 용이)
+    networks:
+      - f5-lab-network
+
+  # --- (선택) ModSecurity 테스트용 추가 서비스 ---
+  # 필요시 추가 취약 애플리케이션을 여기에 정의
+
+networks:
+  f5-lab-network:
+    driver: bridge

