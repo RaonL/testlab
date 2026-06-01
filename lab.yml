@@ -3,10 +3,15 @@
 # =============================================================================
 # 이 파일은 테스트랩의 BIG-IP 연결 정보와 테스트 환경 설정을 정의합니다.
 # 사용 환경에 맞게 값을 수정한 후 스크립트를 실행하세요.
+#
+# [현재 설정]
+#   BIG-IP:       192.168.137.125
+#   DVWA VIP:     192.168.137.211
+#   DVWA 서버:     192.168.137.113 (Port 80)
 
 # --- BIG-IP 연결 정보 ---
 bigip:
-  host: "192.168.1.245"            # BIG-IP 관리 IP 주소
+  host: "192.168.137.125"          # BIG-IP 관리 IP 주소
   username: "admin"                 # BIG-IP 관리 계정
   password: "admin"                 # BIG-IP 관리 비밀번호
   port: 443                         # 관리 포트 (기본 443)
@@ -15,13 +20,13 @@ bigip:
 # --- 테스트 대상 애플리케이션 (DVWA) ---
 target:
   # DVWA가 배포될 VIP 정보
-  vip_address: "192.168.1.100"      # Virtual Server IP
+  vip_address: "192.168.137.211"    # Virtual Server IP
   vip_port: 80                      # Virtual Server Port
-  service_port: 8080                # 실제 DVWA 컨테이너 포트
+  service_port: 80                  # 실제 DVWA 서버 포트 (192.168.137.113:80)
 
   # DVWA 접속 정보 (테스트용)
   dvwa:
-    url: "http://192.168.1.100"     # VIP를 통한 DVWA 접속 URL
+    url: "http://192.168.137.211"   # VIP를 통한 DVWA 접속 URL
     username: "admin"
     password: "password"
     security_level: "low"            # low / medium / high (low가 가장 취약)
@@ -47,7 +52,7 @@ attack_tests:
   test_timeout: 30
 
   # 공격 소스 IP (BIG-IP 로그에서 식별용)
-  source_ip: "192.168.1.10"
+  source_ip: "192.168.137.10"
 
   # User-Agent (WAF 바이패스 방지용 랜덤 User-Agent 사용)
   random_user_agent: true

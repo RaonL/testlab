@@ -53,46 +53,291 @@ docker-compose up -d
 
 ---
 
-## 📖 사용 방법
+## 📖 사용 방법 - 상세 단계별 가이드
 
-### 전체 파이프라인 실행
+> ⚠️ **시작 전 필수 확인사항**
+> 1. Python 3.8+ 설치 확인: `python --version`
+> 2. Python 패키지 설치: `pip install -r requirements.txt`
+> 3. `lab.yml` 파일에 본인의 IP가 정확히 입력되었는지 확인
+> 4. BIG-IP에 DO 패키지와 AS3 패키지가 설치되어 있어야 함
+> 5. DVWA 서버(192.168.137.113:80)가 정상 동작 중이어야 함
+
+---
+
+### Step 00: BIG-IP 연결 및 상태 확인 ⏱ 10초
+
+**목적**: BIG-IP 장비가 정상적으로 통신 가능한지, DO/AS3 패키지가 설치되어 있는지, AWAF 라이선스가 활성화되어 있는지 확인합니다.
 
 ```bash
-# Step 00: BIG-IP 연결 및 상태 확인
 python scripts/00_check_bigip_ready.py
+```
 
-# Step 01: Declarative Onboarding 실행
+**정상 출력 예시**:
+```
+10:00:00 [INFO] ============================================================
+10:00:00 [INFO] BIG-IP Ready Check 시작
+10:00:00 [INFO] ============================================================
+10:00:00 [INFO] 대상: 192.168.137.125:443
+10:00:00 [INFO] 사용자: admin
+
+10:00:02 [INFO] ✅ BIG-IP 연결 성공 (버전: 17.1.0)
+10:00:03 [INFO] ✅ DO 설치됨 (버전: 1.48.0)
+10:00:04 [INFO] ✅ AS3 설치됨 (버전: 3.54.0)
+10:00:05 [INFO]   - awaf: nominal
+10:00:05 [INFO]   - ltm: nominal
+10:00:06 [INFO] ✅ 라이선스 등록됨
+
+============================================================
+점검 결과 요약
+============================================================
+  ✅ PASS  REST API 연결
+  ✅ PASS  DO 패키지 설치
+  ✅ PASS  AS3 패키지 설치
+  ✅ PASS  프로비저닝 상태
+  ✅ PASS  라이선스 상태
+
+결과: 5/5 통과
+🎉 모든 점검을 통과했습니다. 다음 단계를 진행하세요!
+```
+
+**❌ 실패 시 대처법**:
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `연결 실패` | BIG-IP IP가 다름 | `lab.yml`의 `bigip.host` 확인 |
+| `DO 미설치` | DO 패키지 없음 | BIG-IP에 DO iApp 설치 |
+| `AS3 미설치` | AS3 패키지 없음 | BIG-IP에 AS3 iApp 설치 |
+| `프로비저닝 none` | AWAF/LTM 미프로비저닝 | BIG-IP > System > Resource Provisioning |
+
+---
+
+### Step 01: Declarative Onboarding (DO) 실행 ⏱ 1~3분
+
+**목적**: BIG-IP의 초기 네트워크 설정(DNS, NTP, VLAN, Self IP, Route)과 AWAF/LTM 프로비저닝을 자동으로 구성합니다.
+
+```bash
 python scripts/01_onboard_do.py
+```
 
-# Step 02: AS3 DVWA + WAF 정책 배포
+**정상 출력 예시**:
+```
+10:01:00 [INFO] ============================================================
+10:01:00 [INFO] [01] Declarative Onboarding 시작
+10:01:00 [INFO] ============================================================
+10:01:00 [INFO] DO 템플릿 렌더링 중: do_awaf_lab.json.j2
+10:01:00 [INFO] ✅ DO 선언 렌더링 완료: output/do_rendered.json
+10:01:01 [INFO] DO 선언 제출 중...
+10:01:01 [INFO] ✅ DO 선언 제출 성공 (작업 ID: 9d8c7b6a-5e4f-3d2c-1b0a)
+10:01:01 [INFO] DO 작업 완료 대기 중 (최대 600초)...
+10:01:12 [INFO]   진행 중... 상태: RUNNING (시도 1/60)
+10:01:27 [INFO] ✅ DO 작업 완료! (시도 2회)
+
+============================================================
+🎉 DO 온보딩이 성공적으로 완료되었습니다!
+다음 단계: python 02_deploy_as3.py
+============================================================
+```
+
+**⚠️ 주의**: DO는 BIG-IP를 초기화하는 작업입니다. 이미 설정이 완료된 장비라면 SKIP해도 됩니다.
+필요시 `lab.yml`에서 `provision_awaf: false`, `provision_ltm: false`로 설정하면 네트워크 설정 없이 프로비저닝만 적용됩니다.
+
+---
+
+### Step 02: AS3 DVWA + WAF 정책 배포 ⏱ 1~3분
+
+**목적**: DVWA 애플리케이션을 위해 BIG-IP에 Virtual Server(VIP)와 Pool, WAF 정책을 생성합니다.
+
+> **이 단계에서 생성되는 리소스**:
+> - Virtual Server: `192.168.137.211:80` (DVWA VIP)
+> - Pool: `dvwaPool` → 백엔드 `192.168.137.113:80`
+> - WAF 정책: `awaf-lab-policy` (Transparent 모드, SQLi/XSS 등 탐지)
+> - Log Profile: Security 로그를 JSON 형식으로 저장
+
+```bash
 python scripts/02_deploy_as3.py
+```
 
-# Step 03: 공격 테스트 실행
+**정상 출력 예시**:
+```
+10:05:00 [INFO] ============================================================
+10:05:00 [INFO] [02] AS3 Deploy 시작
+10:05:00 [INFO] ============================================================
+10:05:00 [INFO] AS3 템플릿 렌더링 중: as3_dvwa_awaf.json.j2
+10:05:00 [INFO] ✅ AS3 선언 렌더링 완료: output/as3_rendered.json
+10:05:01 [INFO] AS3 선언 제출 중...
+10:05:01 [INFO] ✅ AS3 선언 제출 성공 (작업 ID: a1b2c3d4)
+10:05:01 [INFO] AS3 작업 완료 대기 중 (최대 300초)...
+10:05:15 [INFO] ✅ AS3 배포 완료! 테넌트: AWAF_Lab
+
+--- 배포 검증 ---
+10:05:15 [INFO] Virtual Server 확인 중: 192.168.137.211:80
+10:05:16 [INFO]   ✅ Virtual Server 상태: available
+10:05:16 [INFO]   ✅ Destination: 192.168.137.211:80
+
+============================================================
+🎉 AS3 배포가 성공적으로 완료되었습니다!
+DVWA 접속: http://192.168.137.211:80
+다음 단계: python 03_run_attack_tests.py
+============================================================
+```
+
+**✅ 배포 확인**: 브라우저에서 `http://192.168.137.211` 접속 → DVWA 로그인 페이지가 보이면 성공!
+
+---
+
+### Step 03: 공격 테스트 실행 ⏱ 10~30분 (325개 케이스)
+
+**목적**: DVWA를 대상으로 325개의 실제 보안 공격을 전송하여 WAF 탐지 성능을 측정합니다.
+
+```bash
+# 모든 테스트 실행 (325개 전체)
 python scripts/03_run_attack_tests.py
+```
 
-# 특정 테스트만 실행
+**정상 실행 중 출력 예시**:
+```
+10:10:00 [INFO] ============================================================
+10:10:00 [INFO] [03] Run Attack Tests 시작
+10:10:00 [INFO] ============================================================
+
+--- 테스트 정의 로드 ---
+10:10:00 [INFO]   📄 sqli.yml: SQL Injection (45개 케이스)
+10:10:00 [INFO]   📄 xss.yml: XSS (45개 케이스)
+10:10:00 [INFO]   📄 file_inclusion.yml: File Inclusion (40개 케이스)
+10:10:00 [INFO]   📄 brute_force.yml: Brute Force (40개 케이스)
+10:10:00 [INFO]   📄 path_traversal.yml: Path Traversal (40개 케이스)
+10:10:00 [INFO]   📄 command_injection.yml: Command Injection (30개 케이스)
+... (13개 파일 로드)
+
+--- DVWA 로그인 ---
+10:10:02 [INFO] DVWA 로그인 성공
+10:10:02 [INFO] 보안 레벨 'low' 설정 완료
+
+--- [sqli] 45개 테스트 케이스 실행 ---
+10:10:03 [sqli] 기본 SQL Injection - ' OR 1=1    [1/3] 🛡️  HTTP 403 (0.05s)
+10:10:04 [sqli] 기본 SQL Injection - ' OR 1=1    [2/3] 🛡️  HTTP 403 (0.04s)
+...
+
+============================================================
+📊 테스트 실행 결과 요약
+============================================================
+  총 테스트 케이스: 325
+  전송 성공:        975 (325 x 3회 반복)
+  전송 실패:        0
+  🛡️  WAF 탐지:     280 (86.2%)
+  소요 시간:        12분 35초
+============================================================
+📈 WAF가 높은 탐지율을 보이고 있습니다!
+============================================================
+
+다음 단계: python 04_collect_logs.py
+```
+
+#### 🎯 특정 테스트만 실행하기
+```bash
+# SQL Injection만 실행 (45개)
 python scripts/03_run_attack_tests.py --test sqli
+
+# XSS만 실행 (45개)
 python scripts/03_run_attack_tests.py --test xss
 
-# 실제 전송 없이 시뮬레이션 (Dry Run)
+# Command Injection만 실행 (30개)
+python scripts/03_run_attack_tests.py --test command_injection
+
+# SSRF만 실행 (25개)
+python scripts/03_run_attack_tests.py --test ssrf
+
+# 신규 카테고리 테스트
+python scripts/03_run_attack_tests.py --test xxe
+python scripts/03_run_attack_tests.py --test nosql_injection
+python scripts/03_run_attack_tests.py --test ssti
+python scripts/03_run_attack_tests.py --test jwt_attacks
+```
+
+#### 🔍 실제 전송 없이 미리보기 (Dry Run)
+```bash
 python scripts/03_run_attack_tests.py --dry-run
+```
 
-# Step 04: 로그 수집
+---
+
+### Step 04: 로그 수집 ⏱ 30초
+
+**목적**: BIG-IP에서 WAF가 탐지한 보안 로그(Security violations)를 자동으로 수집합니다.
+
+```bash
 python scripts/04_collect_logs.py
+```
 
-# Step 05: HTML 리포트 생성
+**정상 출력 예시**:
+```
+10:30:00 [INFO] ============================================================
+10:30:00 [INFO] [04] Collect Logs 시작
+10:30:00 [INFO] ============================================================
+10:30:00 [INFO] Security 로그 수집 중 (최근 30분)...
+10:30:02 [INFO] ✅ Security 로그 수집 완료: 280개 발견
+
+  [탐지된 공격 유형]
+    - SQL Injection: 120회
+    - Cross Site Scripting (XSS): 85회
+    - Path Traversal: 50회
+    - Command Execution: 25회
+
+10:30:03 [INFO] ✅ security 로그 저장 완료: output/logs/security_latest.json
+
+============================================================
+📋 로그 수집 완료: 총 280개 로그
+============================================================
+  - security: 280개
+
+다음 단계: python 05_generate_report.py
+============================================================
+```
+
+---
+
+### Step 05: HTML 리포트 생성 ⏱ 5초
+
+**목적**: 테스트 결과와 로그를 기반으로 차트와 표가 포함된 HTML 리포트를 자동 생성합니다.
+
+```bash
 python scripts/05_generate_report.py
 ```
 
-### 빠른 실행 (All-in-One)
+**정상 출력 예시**:
+```
+10:35:00 [INFO] ============================================================
+10:35:00 [INFO] [05] Generate Report 시작
+10:35:00 [INFO] ============================================================
+10:35:00 [INFO] 테스트 결과 로드 중...
+10:35:00 [INFO]   ✅ 325개 테스트 결과 로드 완료
+10:35:00 [INFO] 보안 로그 로드 중...
+10:35:00 [INFO]   ✅ 280개 보안 로그 로드 완료
+10:35:00 [INFO] HTML 리포트 생성 중...
+10:35:01 [INFO] ✅ HTML 리포트 저장 완료: C:\...\f5-awaf-testlab-factory\reports\result.html
+
+============================================================
+🎉 리포트 생성 완료!
+📄 파일: C:\...\f5-awaf-testlab-factory\reports\result.html
+============================================================
+```
+
+**✅ 리포트 확인**: `reports/result.html` 파일을 브라우저로 열면 됩니다.
+
+---
+
+### 🚀 빠른 실행 (All-in-One)
+
+모든 단계를 연속으로 실행하려면:
 
 ```bash
-# 모든 단계를 순차적으로 실행
 for script in scripts/[0-9]*.py; do
     echo "=== Running $script ==="
     python "$script" || { echo "❌ $script failed"; exit 1; }
 done
 ```
+
+> 💡 **주의**: DO(Step 01)는 이미 설정된 장비에서 실행하면 네트워크가 재설정될 수 있습니다.
+> 이미 설정이 완료된 장비라면 Step 01은 건너뛰고 Step 02부터 실행하는 것을 추천합니다.
 
 ---
 
@@ -205,22 +450,23 @@ f5-awaf-testlab-factory/
 ```yaml
 # BIG-IP 연결 정보
 bigip:
-  host: "192.168.1.245"          # 귀하의 BIG-IP IP로 변경
-  username: "admin"               # 관리자 계정
-  password: "admin"               # 관리자 비밀번호
+  host: "192.168.137.125"       # 귀하의 BIG-IP IP
+  username: "admin"
+  password: "admin"
 
 # DVWA 접속 정보
 target:
-  vip_address: "192.168.1.100"    # Virtual Server IP
-  dvwa:
-    url: "http://192.168.1.100"   # DVWA 접속 URL (VIP 경유)
-    security_level: "low"          # low=가장 취약 (테스트 용이)
+  vip_address: "192.168.137.211" # Virtual Server IP
+  svwa:
+    url: "http://192.168.137.211"
+    security_level: "low"
 ```
 
 ### 환경별 커스터마이징
 
-1. **BIG-IP IP/Port 변경** - `lab.yml`의 `bigip.host` 수정
-2. **Virtual Server IP 변경** - `lab.yml`의 `target.vip_address` 수정
+1. **BIG-IP IP 변경** - `lab.yml`의 `bigip.host` 수정 (현재: 192.168.137.125)
+2. **Virtual Server IP 변경** - `lab.yml`의 `target.vip_address` 수정 (현재: 192.168.137.211)
+3. **DVWA 백엔드 IP 변경** - `declarations/as3_dvwa_awaf.json.j2`에서 `serverAddresses` 수정 (현재: 192.168.137.113)
 3. **WAF 모드 변경** - `declarations/waf_policy_template.json`의 `enforcementMode` 수정
    - `transparent` (감사 모드, 기본)
    - `blocking` (차단 모드)
