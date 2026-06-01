@@ -457,7 +457,7 @@ bigip:
 # DVWA 접속 정보
 target:
   vip_address: "192.168.137.211" # Virtual Server IP
-  svwa:
+  dvwa:
     url: "http://192.168.137.211"
     security_level: "low"
 ```
