@@ -13,7 +13,7 @@ F5 AWAF Test Lab Factory는 F5 BIG-IP AWAF(Advanced Web Application Firewall)의
 1. ✅ **BIG-IP Ready Check** - 장비 상태 및 패키지 설치 확인
 2. ✅ **Declarative Onboarding (DO)** - AWAF 프로비저닝 및 네트워크 설정 자동화
 3. ✅ **AS3 Deploy** - DVWA 애플리케이션 + WAF 보안 정책 배포
-4. ✅ **Attack Tests** - SQLi, XSS, LFI/RFI 등 실제 공격 시뮬레이션
+4. ✅ **Attack Tests** - SQLi, XSS, LFI/RFI, Command Injection, SSRF 등 325개 실제 공격 시뮬레이션
 5. ✅ **Log Collection** - BIG-IP 보안 로그 자동 수집
 6. ✅ **Report Generation** - 차트와 표가 포함된 HTML 리포트 생성
 
@@ -118,12 +118,20 @@ f5-awaf-testlab-factory/
 │   ├── as3_dvwa_awaf.json.j2    # AS3 템플릿 (Jinja2)
 │   └── waf_policy_template.json # WAF 보안 정책
 │
-├── tests/                       # 공격 테스트 정의 (YAML)
-│   ├── sqli.yml                 # SQL Injection 테스트 (20 케이스)
-│   ├── xss.yml                  # XSS 테스트 (20 케이스)
-│   ├── file_inclusion.yml       # 파일 포함 취약점 테스트 (20 케이스)
-│   ├── brute_force.yml          # 무차별 대입 테스트 (20 케이스)
-│   └── path_traversal.yml       # 경로 탐색 테스트 (20 케이스)
+├── tests/                       # 공격 테스트 정의 (YAML, 총 325 케이스)
+│   ├── sqli.yml                 # SQL Injection 테스트 (45 케이스)
+│   ├── xss.yml                  # XSS 테스트 (45 케이스)
+│   ├── file_inclusion.yml       # 파일 포함 취약점 테스트 (40 케이스)
+│   ├── brute_force.yml          # 무차별 대입 테스트 (40 케이스)
+│   ├── path_traversal.yml       # 경로 탐색 테스트 (40 케이스)
+│   ├── command_injection.yml    # OS 명령어 삽입 테스트 (30 케이스)
+│   ├── ssrf.yml                 # Server-Side Request Forgery (25 케이스)
+│   ├── xxe.yml                  # XML External Entity (20 케이스)
+│   ├── insecure_deserialization.yml # 안전하지 않은 역직렬화 (15 케이스)
+│   ├── nosql_injection.yml      # NoSQL Injection (15 케이스)
+│   ├── ssti.yml                 # SSTI (15 케이스)
+│   ├── jwt_attacks.yml          # JWT 변조 공격 (10 케이스)
+│   └── http_protocol_abuse.yml  # HTTP 프로토콜 변조 (10 케이스)
 │
 ├── reports/                     # 생성된 리포트
 │   └── result.html              # HTML 테스트 리포트
@@ -144,14 +152,24 @@ f5-awaf-testlab-factory/
 ### 공격 테스트 유형
 
 | 테스트 | 파일 | 케이스 | 심각도 | 설명 |
-|--------|------|--------|--------|------|
-| 🗃️ SQL Injection | `tests/sqli.yml` | 20 | 🔴 Critical | UNION, Blind, Error-based, WAF 우회 |
-| 💉 XSS | `tests/xss.yml` | 20 | 🔴 Critical | Reflected, Stored, DOM, WAF 우회 |
-| 📂 File Inclusion | `tests/file_inclusion.yml` | 20 | 🟠 High | LFI, RFI, PHP Wrapper |
-| 🔑 Brute Force | `tests/brute_force.yml` | 20 | 🟠 High | 로그인 무차별 대입 |
-| 📁 Path Traversal | `tests/path_traversal.yml` | 20 | 🟠 High | 디렉토리 경로 탐색 |
+|--------|------|:------:|--------|------|
+| 🗃️ SQL Injection | `tests/sqli.yml` | **45** | 🔴 Critical | UNION, Blind, Error-based, PostgreSQL/MSSQL, Second-Order, OOB, WAF 우회 |
+| 💉 XSS | `tests/xss.yml` | **45** | 🔴 Critical | Reflected, Stored, DOM, mXSS, Polyglot, CSP Bypass, DOM Clobbering |
+| 📂 File Inclusion | `tests/file_inclusion.yml` | **40** | 🟠 High | LFI, RFI, PHP Wrapper, Log Poisoning, Session Inclusion |
+| 🔑 Brute Force | `tests/brute_force.yml` | **40** | 🟠 High | Credential Stuffing, Password Spraying, MFA Bypass, API BF, Rate Limit 우회 |
+| 📁 Path Traversal | `tests/path_traversal.yml` | **40** | 🟠 High | 디렉토리 경로 탐색, K8s/Docker 경로, Cloud 환경, 인코딩 우회 |
+| 💻 Command Injection | `tests/command_injection.yml` | **30** | 🔴 Critical | OS 명령어 삽입, Blind Cmd, OOB Cmd, 우회 기법 |
+| 🌐 SSRF | `tests/ssrf.yml` | **25** | 🔴 Critical | 내부망 스캔, AWS/GCP/Azure 메타데이터, 프로토콜 우회 |
+| 📄 XXE | `tests/xxe.yml` | **20** | 🔴 Critical | In-band/OOB/Blind XXE, XInclude, SVG, SOAP |
+| 🧊 Insecure Deserialization | `tests/insecure_deserialization.yml` | **15** | 🔴 Critical | PHP/Java/Python 역직렬화, Log4Shell, Proto Pollution |
+| 🍃 NoSQL Injection | `tests/nosql_injection.yml` | **15** | 🔴 Critical | MongoDB $ne/$gt/$regex, Blind, Content-Type 우회 |
+| 📝 SSTI | `tests/ssti.yml` | **15** | 🔴 Critical | Jinja2, Twig, Freemarker, Velocity, ERB RCE |
+| 🔐 JWT Attacks | `tests/jwt_attacks.yml` | **10** | 🟠 High | None Alg, Algorithm Confusion, JKU/JWK/Kid Injection |
+| 🔧 HTTP Protocol Abuse | `tests/http_protocol_abuse.yml` | **10** | 🟠 High | Method Tampering, Content-Type 변조, HPP, Smuggling |
 
-**총 100개의 테스트 케이스**가 포함되어 있습니다.
+**총 325개의 테스트 케이스**가 13개 파일에 포함되어 있습니다.
+
+> 💡 신규 테스트 파일은 DVWA에 실제 취약점이 없는 경우에도(WAF 우회 기법 등) **WAF 시그니처 탐지 여부를 검증**하는 용도로 동작합니다.
 
 ### WAF 정책 구성
 

@@ -1,0 +1,138 @@
+# =============================================================================
+# SSTI (Server-Side Template Injection) Test Cases
+# =============================================================================
+# Jinja2, Twig, Freemarker, Velocity 등 템플릿 엔진 대상 주입 공격
+# WAF의 SSTI 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "ssti"
+name: "Server-Side Template Injection"
+description: "SSTI (Server-Side Template Injection) 공격 탐지 테스트"
+severity: "critical"
+icon: "📝"
+
+tests:
+  # --- Jinja2 (Python) ---
+  - id: "ssti-001"
+    description: "SSTI Jinja2 - {{7*7}} 기본 테스트"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{7*7}}"
+    severity: "medium"
+
+  - id: "ssti-002"
+    description: "SSTI Jinja2 - {{config}} 정보 노출"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{config}}"
+    severity: "critical"
+
+  - id: "ssti-003"
+    description: "SSTI Jinja2 - {{''.__class__.__mro__}} RCE 체인"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{''.__class__.__mro__[2].__subclasses__()}}"
+    severity: "critical"
+
+  - id: "ssti-004"
+    description: "SSTI Jinja2 - os.popen RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{''.__class__.__mro__[1].__subclasses__()[186].__init__.__globals__['__builtins__']['__import__']('os').popen('id').read()}}"
+    severity: "critical"
+
+  - id: "ssti-005"
+    description: "SSTI Jinja2 - lipscomb 필터 우회"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{request|attr('application')|attr('__globals__')|attr('__getitem__')('__builtins__')|attr('__getitem__')('eval')('__import__(\"os\").popen(\"id\").read()')}}"
+    severity: "critical"
+
+  - id: "ssti-006"
+    description: "SSTI Jinja2 - {% %} 블록문"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{% if 1==1 %}yes{% endif %}"
+    severity: "high"
+
+  # --- Twig (PHP) ---
+  - id: "ssti-007"
+    description: "SSTI Twig - {{7*7}} 기본"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{7*7}}"
+    severity: "medium"
+
+  - id: "ssti-008"
+    description: "SSTI Twig - _self.env RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}"
+    severity: "critical"
+
+  - id: "ssti-009"
+    description: "SSTI Twig - map/spawn 필터 RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "{{['id']|map('system')|join}}"
+    severity: "critical"
+
+  # --- Freemarker (Java) ---
+  - id: "ssti-010"
+    description: "SSTI Freemarker - ${7*7} 기본"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "${7*7}"
+    severity: "medium"
+
+  - id: "ssti-011"
+    description: "SSTI Freemarker - new() RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "${'freemarker.template.utility.Execute'?new()('id')}"
+    severity: "critical"
+
+  - id: "ssti-012"
+    description: "SSTI Freemarker - Runtime.exec RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "${'java.lang.Runtime'?new()?method('exec','id')}"
+    severity: "critical"
+
+  # --- Velocity (Java) ---
+  - id: "ssti-013"
+    description: "SSTI Velocity - #set RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "#set($x=7*7)$x"
+    severity: "high"
+
+  - id: "ssti-014"
+    description: "SSTI Velocity - $class.inspect RCE"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "$class.inspect('java.lang.Runtime').getRuntime().exec('id')"
+    severity: "critical"
+
+  # --- ERB (Ruby) ---
+  - id: "ssti-015"
+    description: "SSTI ERB - <%= system('id') %>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<%= system('id') %>"
+    severity: "critical"

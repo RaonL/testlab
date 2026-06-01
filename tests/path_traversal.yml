@@ -2,12 +2,12 @@
 # Path Traversal (Directory Traversal) Test Cases
 # =============================================================================
 # DVWA의 File Inclusion 페이지를 통해 Path Traversal 취약점을
-# 테스트하고 WAF 탐지 능력을 검증합니다.
+# 테스트하고 WAF 탐지 능력을 검증합니다. 40케이스
 # =============================================================================
 
 category: "path_traversal"
 name: "Path Traversal"
-description: "경로 탐색 (Path/Directory Traversal) 공격 탐지 테스트"
+description: "경로 탐색 (Path/Directory Traversal) 공격 탐지 테스트 (확장판 40케이스)"
 severity: "high"
 icon: "📁"
 
@@ -129,8 +129,7 @@ tests:
 
   # --- 우회 기법 ---
   - id: "pt-015"
-    description: "Path Traversal - ..././..././..././
-"
+    description: "Path Traversal - ..././..././..././"
     method: "GET"
     path: "/vulnerabilities/fi/"
     params:
@@ -176,3 +175,171 @@ tests:
     params:
       page: "../../../../.htaccess"
     severity: "high"
+
+  # ======== [신규 확장: +20 케이스] ========
+
+  # --- 고급 인코딩 우회 ---
+  - id: "pt-021"
+    description: "Path Trav - UTF-8 오버플로우 %c0%ae"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd"
+    severity: "medium"
+
+  - id: "pt-022"
+    description: "Path Trav - 더블닷+URL인코딩 혼합"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "..%252f..%252f..%252f..%252fetc/passwd"
+    severity: "medium"
+
+  - id: "pt-023"
+    description: "Path Trav - 16진수 %2e%2e%2f 완전 우회"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd"
+    severity: "medium"
+
+  - id: "pt-024"
+    description: "Path Trav - MS-DOS 8.3 파일명"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../PROGRA~1/APACHE~1/CONF~/HTTPD~1.CONF"
+    severity: "medium"
+
+  # --- 클라우드 환경 경로 ---
+  - id: "pt-025"
+    description: "Path Trav - AWS ECS 컨테이너 메타데이터"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../var/lib/ecs/data/metadata"
+    severity: "high"
+
+  - id: "pt-026"
+    description: "Path Trav - AWS 람다 환경변수"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../proc/self/environ"
+    severity: "high"
+
+  - id: "pt-027"
+    description: "Path Trav - 쿠버네티스 서비스어카운트"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../var/run/secrets/kubernetes.io/serviceaccount/token"
+    severity: "critical"
+
+  - id: "pt-028"
+    description: "Path Trav - 쿠버네티스 CA 인증서"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    severity: "critical"
+
+  # --- Docker 환경 경로 ---
+  - id: "pt-029"
+    description: "Path Trav - Docker 환경 파일"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../proc/1/cgroup"
+    severity: "high"
+
+  - id: "pt-030"
+    description: "Path Trav - Docker 레이어 정보"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../proc/version"
+    severity: "medium"
+
+  # --- 웹 애플리케이션 중요 파일 ---
+  - id: "pt-031"
+    description: "Path Trav - .env 파일"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../.env"
+    severity: "critical"
+
+  - id: "pt-032"
+    description: "Path Trav - composer.json"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../composer.json"
+    severity: "high"
+
+  - id: "pt-033"
+    description: "Path Trav - package.json"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../package.json"
+    severity: "medium"
+
+  - id: "pt-034"
+    description: "Path Trav - web.xml (Java)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../WEB-INF/web.xml"
+    severity: "high"
+
+  - id: "pt-035"
+    description: "Path Trav - application.yml (Spring Boot)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../BOOT-INF/classes/application.yml"
+    severity: "high"
+
+  # --- 특수 경로 우회 ---
+  - id: "pt-036"
+    description: "Path Trav - 심볼릭링크 활용 /proc/self/root"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../proc/self/root/etc/passwd"
+    severity: "high"
+
+  - id: "pt-037"
+    description: "Path Trav - /sys/kernel 정보"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../sys/kernel/hostname"
+    severity: "medium"
+
+  # --- 경로 정규화 우회 ---
+  - id: "pt-038"
+    description: "Path Trav - 중복 슬래시 ////etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "....//....//....//....//etc/passwd"
+    severity: "medium"
+
+  - id: "pt-039"
+    description: "Path Trav - URL encode path parameter"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/passwd%23"
+    severity: "medium"
+
+  - id: "pt-040"
+    description: "Path Trav - query string appended"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../../etc/passwd?"
+    severity: "medium"

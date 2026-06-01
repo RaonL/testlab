@@ -1,0 +1,108 @@
+# =============================================================================
+# JWT Attacks Test Cases
+# =============================================================================
+# JWT(JSON Web Token) 변조, None 알고리즘, 약한 시크릿 등
+# WAF의 JWT 관련 공격 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "jwt_attacks"
+name: "JWT Attacks"
+description: "JWT (JSON Web Token) 변조/우회 공격 탐지 테스트"
+severity: "high"
+icon: "🔐"
+
+tests:
+  # --- None Algorithm Attack ---
+  - id: "jwt-001"
+    description: "JWT - None Algorithm (alg: none)"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+    params: {}
+    severity: "critical"
+
+  - id: "jwt-002"
+    description: "JWT - None Algorithm (대문자 NONE)"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJOT05FIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIn0."
+    params: {}
+    severity: "critical"
+
+  - id: "jwt-003"
+    description: "JWT - None Algorithm (Null 바이트)"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJub25lACIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIn0."
+    params: {}
+    severity: "high"
+
+  # --- Algorithm Confusion ---
+  - id: "jwt-004"
+    description: "JWT - HS256 (대칭키)를 RS256(비대칭)으로 혼동"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.pubkey"
+    params: {}
+    severity: "critical"
+
+  - id: "jwt-005"
+    description: "JWT - Algorithm confusion (alg: HS256, 공개키 서명)"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.dGVzdA"
+    params: {}
+    severity: "critical"
+
+  # --- Weak Secret / Brute Force ---
+  - id: "jwt-006"
+    description: "JWT - 약한 시크릿 'secret'"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIn0.IwPpL9aHFBG0tD5MhkIZX-MXW_2PJpSl0s3_Y0RgKoI"
+    params: {}
+    severity: "high"
+
+  - id: "jwt-007"
+    description: "JWT - 약한 시크릿 '12345'"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4ifQ.6VpSL_UdTlY1rVqvVcfVFGtLIPDNbdhSeMH3sSxFoDY"
+    params: {}
+    severity: "high"
+
+  # --- JWT Header Injection ---
+  - id: "jwt-008"
+    description: "JWT - jku (JWK Set URL) 원격 키서버"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHA6Ly9hdHRhY2tlci5jb20vandrLmpzb24ifQ.eyJzdWIiOiJhZG1pbiJ9."
+    params: {}
+    severity: "critical"
+
+  - id: "jwt-009"
+    description: "JWT - jwk (Embedded Key) 인라인 키"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJSUzI1NiIsImp3ayI6eyJrdHkiOiJSU0EiLCJuIjoiIn19.eyJzdWIiOiJhZG1pbiJ9."
+    params: {}
+    severity: "critical"
+
+  # --- Kid Injection ---
+  - id: "jwt-010"
+    description: "JWT - kid: SQL Injection"
+    method: "GET"
+    path: "/"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6IidPUiAxPTEtLScifQ.eyJzdWIiOiJhZG1pbiJ9."
+    params: {}
+    severity: "high"

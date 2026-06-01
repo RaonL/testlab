@@ -1,0 +1,153 @@
+# =============================================================================
+# NoSQL Injection Test Cases
+# =============================================================================
+# MongoDB Injection 등 NoSQL 데이터베이스 대상 공격을 통해
+# WAF 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "nosql_injection"
+name: "NoSQL Injection"
+description: "NoSQL Injection 공격 탐지 테스트 (MongoDB 중심)"
+severity: "critical"
+icon: "🍃"
+
+tests:
+  # --- MongoDB HTTP Query Injection ---
+  - id: "nosql-001"
+    description: "NoSQL - $ne (not equal) 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$ne\": \"\"}"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "nosql-002"
+    description: "NoSQL - $gt (greater than) 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$gt\": \"\"}"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "nosql-003"
+    description: "NoSQL - $regex 전체 매칭"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$regex\": \".*\"}"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "nosql-004"
+    description: "NoSQL - $where JavaScript true"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$where\": \"1==1\"}"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "nosql-005"
+    description: "NoSQL - $nin + 배열 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$nin\": [\"\"]}"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "nosql-006"
+    description: "NoSQL - $exists + $gt 조합"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$exists\": true, \"$gt\": \"\"}"
+      Submit: "Submit"
+    severity: "high"
+
+  # --- NoSQL POST Injection ---
+  - id: "nosql-007"
+    description: "NoSQL - POST JSON $ne"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$ne\": \"invalid\"}"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "nosql-008"
+    description: "NoSQL - POST $gt 비밀번호 우회"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"password\": {\"$gt\": \"\"}}"
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- NoSQL Blind Injection ---
+  - id: "nosql-009"
+    description: "NoSQL Blind - $regex 문자 추측"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$regex\": \"^a\"}"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "nosql-010"
+    description: "NoSQL Blind - $regex 비밀번호 크래킹"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"password\": {\"$regex\": \"^p\"}}"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "nosql-011"
+    description: "NoSQL Blind - $where 시간 기반"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$where\": \"sleep(5000)\"}"
+      Submit: "Submit"
+    severity: "high"
+
+  # --- NoSQL WAF 우회 ---
+  - id: "nosql-012"
+    description: "NoSQL - URL 인코딩 중괄호 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "%7B%22%24ne%22%3A%20%22%22%7D"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "nosql-013"
+    description: "NoSQL - Content-Type JSON 우회"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "admin"
+      Submit: "{\"$ne\": \"x\"}"
+    severity: "medium"
+
+  # --- NoSQL 특수 연산자 ---
+  - id: "nosql-014"
+    description: "NoSQL - $in 연산자 배열 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$in\": [\"admin\", \"root\", \"test\"]}"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "nosql-015"
+    description: "NoSQL - $or 연산자 조건 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "{\"$or\": [{}, {\"admin\": true}]}"
+      Submit: "Submit"
+    severity: "critical"

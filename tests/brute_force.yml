@@ -2,14 +2,14 @@
 # Brute Force Test Cases
 # =============================================================================
 # DVWA의 Brute Force 취약점을 통해 WAF의 무차별 대입 공격 탐지
-# 및 Rate Limiting 능력을 검증합니다.
+# 및 Rate Limiting 능력을 검증합니다. Credential Stuffing, API BF 포함 40케이스
 # =============================================================================
 
 category: "brute_force"
 name: "Brute Force"
-description: "브루트 포스 (무차별 대입) 공격 탐지 테스트"
+description: "브루트 포스 (무차별 대입) 공격 탐지 테스트 (확장판 40케이스)"
 severity: "high"
-icon: "🔑
+icon: "🔑"
 
 tests:
   # --- 기본 Brute Force (로그인) ---
@@ -214,5 +214,215 @@ tests:
     params:
       username: "sysadmin"
       password: "sys1234"
+      Login: "Login"
+    severity: "high"
+
+  # ======== [신규 확장: +20 케이스] ========
+
+  # --- Credential Stuffing (유출 계정 기반) ---
+  - id: "bf-021"
+    description: "Cred Stuffing - 유출계정 combo 1"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "Passw0rd!"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-022"
+    description: "Cred Stuffing - 유출계정 combo 2"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "Welcome1"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-023"
+    description: "Cred Stuffing - 유출계정 combo 3"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "P@ssw0rd"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-024"
+    description: "Cred Stuffing - 유출계정 combo 4"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "changeme"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-025"
+    description: "Cred Stuffing - 유출계정 combo 5"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "1q2w3e4r"
+      Login: "Login"
+    severity: "high"
+
+  # --- 사용자명 변형 (Username Brute Force) ---
+  - id: "bf-026"
+    description: "User BF - admin 변형"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "administrator"
+      password: "secret"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-027"
+    description: "User BF - admin2 변형"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "adm1n"
+      password: "adm1n"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-028"
+    description: "User BF - 서비스 계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "svc_webapp"
+      password: "svc1234"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-029"
+    description: "User BF - 백업 계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "backup"
+      password: "backup123"
+      Login: "Login"
+    severity: "medium"
+
+  # --- API Brute Force (JSON Body) ---
+  - id: "bf-030"
+    description: "API BF - JSON 로그인 시도 1"
+    method: "POST"
+    path: "/api/login"
+    params:
+      username: "admin"
+      password: "apipass1"
+    severity: "high"
+
+  - id: "bf-031"
+    description: "API BF - JSON 로그인 시도 2"
+    method: "POST"
+    path: "/api/login"
+    params:
+      username: "admin"
+      password: "apipass2"
+    severity: "high"
+
+  - id: "bf-032"
+    description: "API BF - JSON 로그인 시도 3"
+    method: "POST"
+    path: "/api/login"
+    params:
+      username: "admin"
+      password: "apipass3"
+    severity: "high"
+
+  # --- MFA Bypass (다단계 인증 우회 시도) ---
+  - id: "bf-033"
+    description: "MFA Bypass - OTP 재전송 공격"
+    method: "POST"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "admin"
+      otp: "000000"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-034"
+    description: "MFA Bypass - OTP 무차별 1"
+    method: "POST"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "admin"
+      otp: "123456"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-035"
+    description: "MFA Bypass - OTP 무차별 2"
+    method: "POST"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "admin"
+      otp: "654321"
+      Login: "Login"
+    severity: "high"
+
+  # --- Rate Limit 우회 시도 ---
+  - id: "bf-036"
+    description: "Rate Limit 우회 - X-Forwarded-For 변조"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "test123"
+      X-Forwarded-For: "10.0.0.1"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-037"
+    description: "Rate Limit 우회 - X-Real-IP 변조"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "test456"
+      X-Real-IP: "10.0.0.2"
+      Login: "Login"
+    severity: "medium"
+
+  - id: "bf-038"
+    description: "Rate Limit 우회 - User-Agent 순환"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "admin"
+      password: "test789"
+      Login: "Login"
+    severity: "medium"
+
+  # --- Password Spraying (소수 패스워드 다수 계정) ---
+  - id: "bf-039"
+    description: "Password Spray - 'Spring2024!' 다수계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "user01"
+      password: "Spring2024!"
+      Login: "Login"
+    severity: "high"
+
+  - id: "bf-040"
+    description: "Password Spray - 'Winter2024#' 다수계정"
+    method: "GET"
+    path: "/vulnerabilities/brute/"
+    params:
+      username: "user02"
+      password: "Winter2024#"
       Login: "Login"
     severity: "high"

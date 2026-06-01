@@ -1,0 +1,104 @@
+# =============================================================================
+# HTTP Protocol Abuse Test Cases
+# =============================================================================
+# HTTP Request Smuggling, Method Tampering, Header Injection 등
+# HTTP 프로토콜 수준의 공격을 통한 WAF 탐지 능력 검증
+# =============================================================================
+
+category: "http_protocol_abuse"
+name: "HTTP Protocol Abuse"
+description: "HTTP 프로토콜 변조/우회 공격 탐지 테스트"
+severity: "high"
+icon: "🔧"
+
+tests:
+  # --- HTTP Method Tampering ---
+  - id: "http-001"
+    description: "HTTP Method - HEAD로 GET 우회"
+    method: "HEAD"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' OR 1=1-- "
+      Submit: "Submit"
+    severity: "high"
+
+  - id: "http-002"
+    description: "HTTP Method - OPTIONS로 POST 우회"
+    method: "OPTIONS"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>alert(1)</script>"
+    severity: "medium"
+
+  - id: "http-003"
+    description: "HTTP Method - PUT으로 POST 우회"
+    method: "PUT"
+    path: "/vulnerabilities/xss_s/"
+    params:
+      txtName: "<script>alert(1)</script>"
+      btnSign: "Sign Guestbook"
+    severity: "high"
+
+  - id: "http-004"
+    description: "HTTP Method - PATCH로 SQLi 전송"
+    method: "PATCH"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' UNION SELECT null,version()-- "
+      Submit: "Submit"
+    severity: "high"
+
+  # --- Content-Type 변조 ---
+  - id: "http-005"
+    description: "Content-Type - text/plain으로 SQLi 위장"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' OR '1'='1"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "http-006"
+    description: "Content-Type - application/xml로 XSS 위장"
+    method: "POST"
+    path: "/vulnerabilities/xss_r/"
+    params:
+      name: "<script>alert(1)</script>"
+    severity: "medium"
+
+  # --- HPP (HTTP Parameter Pollution) - 단일 파라미터 방식 ---
+  - id: "http-007"
+    description: "HPP - 파라미터 폴루션 (SQLi 결합)"
+    method: "GET"
+    path: "/vulnerabilities/sqli/?id=1&id='%20OR%201=1--"
+    params:
+      id: "1"
+      Submit: "Submit"
+    severity: "medium"
+
+  - id: "http-008"
+    description: "HPP - 파라미터 폴루션 (XSS 결합)"
+    method: "GET"
+    path: "/vulnerabilities/xss_r/?name=<script>&name=alert(1)&name=</script>"
+    params:
+      name: "test"
+    severity: "medium"
+
+  # --- HTTP Request Smuggling 패턴 ---
+  - id: "http-009"
+    description: "HTTP Smuggling - CL.TE 패턴 (Content-Length + Transfer-Encoding)"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "' OR 1=1-- "
+      Submit: "Submit"
+    severity: "critical"
+
+  - id: "http-010"
+    description: "Chunked Transfer Encoding 위장"
+    method: "POST"
+    path: "/vulnerabilities/sqli/"
+    params:
+      id: "1 UNION SELECT null,@@version-- "
+      Submit: "Submit"
+    severity: "high"
