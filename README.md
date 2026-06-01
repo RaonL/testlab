@@ -152,6 +152,10 @@ python scripts/01_onboard_do.py
 > - WAF 정책: `awaf-lab-policy` (Transparent 모드, SQLi/XSS 등 탐지)
 > - Log Profile: Security 로그를 JSON 형식으로 저장
 
+**ℹ️ WAF 정책 파일 자동 업로드**:  
+스크립트가 `declarations/waf_policy_template.json` 파일을 BIG-IP의 `https://192.168.137.125/mgmt/shared/file-transfer/uploads/` API를 통해 자동 업로드합니다.  
+(자동 업로드가 실패해도 AS3 배포는 계속 진행되며, 아래 수동 방법으로 파일을 업로드하고 재시도할 수 있습니다.)
+
 ```bash
 python scripts/02_deploy_as3.py
 ```
@@ -338,6 +342,27 @@ done
 
 > 💡 **주의**: DO(Step 01)는 이미 설정된 장비에서 실행하면 네트워크가 재설정될 수 있습니다.
 > 이미 설정이 완료된 장비라면 Step 01은 건너뛰고 Step 02부터 실행하는 것을 추천합니다.
+
+---
+
+## ⚠️ 문제 해결 - WAF 정책 파일 업로드
+
+Step 02 실행 시 "WAF 정책 파일 업로드" 단계에서 실패하면 아래 방법으로 수동 업로드 후 다시 실행하세요.
+
+### 방법 1: SCP를 통한 수동 업로드 (권장)
+```bash
+# 로컬 PC에서 실행 (BIG-IP 관리 IP: 192.168.137.125)
+scp declarations/waf_policy_template.json admin@192.168.137.125:/var/config/rest/iapps/as3/declarations/
+```
+
+### 방법 2: WinSCP 사용 (Windows)
+1. WinSCP 실행
+2. 파일 프로토콜: **SCP** 선택
+3. 호스트: `192.168.137.125`
+4. 사용자: `admin`, 비밀번호: `admin`
+5. 로컬 파일: `declarations/waf_policy_template.json`
+6. 원격 경로: `/var/config/rest/iapps/as3/declarations/`
+7. 업로드 후 다시 `python scripts/02_deploy_as3.py` 실행
 
 ---
 

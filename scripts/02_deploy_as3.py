@@ -22,6 +22,8 @@ WAF 보안 정책을 BIG-IP에 배포합니다.
 import sys
 import json
 import time
+import re
+import base64
 import logging
 from pathlib import Path
 
@@ -186,6 +188,115 @@ def wait_for_completion(bigip: dict, job_id: str, max_retries: int = 60, interva
     return False
 
 
+def upload_waf_policy_to_bigip(bigip: dict) -> bool:
+    """
+    WAF 정책 템플릿(waf_policy_template.json)을 BIG-IP에 업로드합니다.
+    
+    1. 대상 디렉토리 생성 (mkdir -p)
+    2. REST API 파일 업로드 (/mgmt/shared/file-transfer/uploads)
+    3. 업로드된 파일을 대상 경로로 복사
+    
+    실패 시 수동 업로드 명령어를 안내합니다.
+    """
+    host = bigip["host"]
+    port = bigip.get("port", 443)
+    username = bigip["username"]
+    password = bigip["password"]
+    verify = bigip.get("validate_certs", False)
+
+    target_dir = "/var/config/rest/iapps/as3/declarations"
+    target_file = f"{target_dir}/waf_policy_template.json"
+    upload_url = f"https://{host}:{port}/mgmt/shared/file-transfer/uploads/waf_policy_template.json"
+    bash_url = f"https://{host}:{port}/mgmt/tm/util/bash"
+
+    # 로컬 파일 경로
+    local_policy = Path(__file__).resolve().parent.parent / "declarations" / "waf_policy_template.json"
+    if not local_policy.exists():
+        logger.warning(f"⚠️ 로컬 WAF 정책 파일을 찾을 수 없습니다: {local_policy}")
+        logger.warning("   AS3 배포를 계속합니다. (WAF 정책 파일이 BIG-IP에 이미 있어야 함)")
+        return False
+
+    logger.info("=" * 60)
+    logger.info("WAF 정책 파일 업로드 시작")
+    logger.info("=" * 60)
+    logger.info(f"  대상: {host}:{port}")
+    logger.info(f"  로컬 파일: {local_policy}")
+    logger.info(f"  BIG-IP 경로: {target_file}")
+
+    try:
+        # 1. 대상 디렉토리 생성
+        logger.info("  [1/3] 대상 디렉토리 생성 중...")
+        mkdir_cmd = {
+            "command": "run",
+            "utilCmdArgs": f"-c 'mkdir -p {target_dir}'"
+        }
+        resp = requests.post(
+            bash_url,
+            auth=(username, password),
+            json=mkdir_cmd,
+            verify=verify,
+            timeout=10
+        )
+        if resp.status_code in (200, 201):
+            logger.info(f"  ✅ 디렉토리 생성 완료 (또는 이미 존재)")
+        else:
+            logger.warning(f"  ⚠️ 디렉토리 생성 응답: HTTP {resp.status_code}")
+
+        # 2. 파일 업로드
+        logger.info("  [2/3] WAF 정책 파일 업로드 중...")
+        with open(local_policy, "rb") as f:
+            policy_content = f.read()
+
+        resp = requests.post(
+            upload_url,
+            auth=(username, password),
+            data=policy_content,
+            headers={"Content-Type": "application/octet-stream"},
+            verify=verify,
+            timeout=30
+        )
+
+        if resp.status_code not in (200, 201):
+            logger.warning(f"  ⚠️ 파일 업로드 응답: HTTP {resp.status_code}")
+            logger.warning(f"  응답: {resp.text[:300]}")
+            logger.warning("  수동 업로드가 필요할 수 있습니다.")
+            return False
+
+        logger.info(f"  ✅ 파일 업로드 완료 (HTTP {resp.status_code})")
+
+        # 3. 업로드된 파일을 대상 경로로 복사
+        logger.info("  [3/3] 파일을 대상 경로로 복사 중...")
+        cp_cmd = {
+            "command": "run",
+            "utilCmdArgs": f"-c 'cp /var/config/rest/downloads/waf_policy_template.json {target_file}'"
+        }
+        resp = requests.post(
+            bash_url,
+            auth=(username, password),
+            json=cp_cmd,
+            verify=verify,
+            timeout=10
+        )
+
+        if resp.status_code in (200, 201):
+            logger.info(f"  ✅ 파일 복사 완료: {target_file}")
+            print(f"\n🎉 WAF 정책 파일 업로드 성공!")
+            print(f"   📄 {target_file}")
+            return True
+        else:
+            logger.warning(f"  ⚠️ 파일 복사 실패 (HTTP {resp.status_code})")
+            logger.warning(f"   응답: {resp.text[:300]}")
+            return False
+
+    except requests.exceptions.ConnectionError as e:
+        logger.warning(f"❌ BIG-IP 연결 실패: {e}")
+        logger.warning("  수동으로 파일을 업로드하고 다시 실행하세요.")
+        return False
+    except Exception as e:
+        logger.warning(f"❌ 업로드 중 오류: {e}")
+        return False
+
+
 def verify_virtual_server(bigip: dict, config: dict) -> bool:
     """Virtual Server가 정상적으로 생성되었는지 확인합니다."""
     host = bigip["host"]
@@ -229,6 +340,9 @@ def main():
 
     config = load_config()
     bigip = config["bigip"]
+
+    # 0. WAF 정책 파일 업로드 (선택, 실패해도 계속 진행)
+    upload_waf_policy_to_bigip(bigip)
 
     # 1. 템플릿 렌더링
     as3_declaration = render_template(config)
