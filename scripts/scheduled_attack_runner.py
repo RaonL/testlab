@@ -29,15 +29,6 @@ import logging
 from pathlib import Path
 from datetime import datetime, timedelta
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-import yaml
-import requests
-from urllib3 import disable_warnings
-from urllib3.exceptions import InsecureRequestWarning
-
-disable_warnings(InsecureRequestWarning)
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -80,17 +71,15 @@ def weighted_random_selection(count: int = None) -> list:
     return unique
 
 
-def run_single_batch(category_ids: list = None, repeat: int = None) -> dict:
+def run_single_batch(category_ids: list = None) -> dict:
     """
     선택된 카테고리에 대해 공격 테스트 실행.
     n8n에서 호출용 - JSON 결과 반환.
+    ※ 반복 횟수는 lab.yml의 attack_tests.repeat_count 설정을 따릅니다.
     """
     if category_ids is None:
         selected = weighted_random_selection()
         category_ids = [c["id"] for c in selected]
-
-    if repeat is None:
-        repeat = random.choice([1, 1, 2])  # 기본 1~2회 (가끔 2회)
 
     base_dir = Path(__file__).resolve().parent.parent
     script_path = base_dir / "scripts" / "03_run_attack_tests.py"
@@ -109,7 +98,7 @@ def run_single_batch(category_ids: list = None, repeat: int = None) -> dict:
 
     for cat_id in category_ids:
         try:
-            logger.info(f"🚀 실행: {cat_id} (반복: {repeat}회)")
+            logger.info(f"🚀 실행: {cat_id}")
 
             cmd = [
                 sys.executable, str(script_path),
@@ -207,8 +196,7 @@ def main():
                         help="실행 모드 (once=1회, daemon=무한루프)")
     parser.add_argument("--category", "-c", action="append",
                         help="특정 카테고리 지정 (여러 번 사용 가능). 미지정시 랜덤")
-    parser.add_argument("--repeat", "-r", type=int, default=None,
-                        help="반복 횟수 (기본: 랜덤 1~2)")
+    # 참고: 반복 횟수는 lab.yml의 attack_tests.repeat_count 설정을 따릅니다.
     parser.add_argument("--output", "-o",
                         help="JSON 결과 저장 경로 (선택)")
 
@@ -220,7 +208,7 @@ def main():
 
     # once mode
     category_ids = args.category
-    result = run_single_batch(category_ids, args.repeat)
+    result = run_single_batch(category_ids)
 
     # JSON 출력 (n8n이 파싱 가능)
     output = {

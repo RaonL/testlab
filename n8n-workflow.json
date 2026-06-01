@@ -37,7 +37,7 @@
       "position": [650, 300],
       "parameters": {
         "conditions": {
-          "string": [
+          "boolean": [
             {
               "value1": "={{ $json.skipped }}",
               "operation": "equal",
