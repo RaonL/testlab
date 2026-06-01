@@ -1,0 +1,112 @@
+{
+  "name": "F5 AWAF - 장기 공격 테스트 스케줄러",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Schedule (15분 간격)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "random-runner",
+      "name": "🎲 랜덤 실행 결정 (70%)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "parameters": {
+        "language": "javaScript",
+        "code": "// 70% 확률로 실행, 30%는 SKIP\nconst run = Math.random() < 0.7;\n\nif (!run) {\n  console.log('[SKIP] 이번 사이클 건너뜀');\n  return [{ json: { skipped: true, message: 'Skipped by random decision' } }];\n}\n\n// 카테고리 랜덤 선택 (이미 Python 스크립트가 처리)\nreturn [{ json: { skipped: false, mode: 'once', timestamp: new Date().toISOString() } }];\n"
+      }
+    },
+    {
+      "id": "if-run-check",
+      "name": "실행 여부 체크",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.skipped }}",
+              "operation": "equal",
+              "value2": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "execute-test",
+      "name": "🐍 공격 테스트 실행",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "parameters": {
+        "command": "cd /path/to/f5-awaf-testlab-factory && python scripts/scheduled_attack_runner.py --mode once",
+        "options": {
+          "timeout": 600
+        }
+      }
+    },
+    {
+      "id": "parse-result",
+      "name": "📊 결과 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 200],
+      "parameters": {
+        "language": "javaScript",
+        "code": "const output = $json.stdout;\n\n// 출력값이 있으면 JSON 파싱 시도\nif (output) {\n  try {\n    // stdout에서 JSON 부분 찾기\n    const lines = output.split('\\n');\n    let jsonStr = '';\n    let inJson = false;\n    for (const line of lines) {\n      if (line.trim().startsWith('{')) {\n        inJson = true;\n      }\n      if (inJson) {\n        jsonStr += line + '\\n';\n      }\n    }\n    \n    if (jsonStr) {\n      const parsed = JSON.parse(jsonStr);\n      \n      const categories = parsed.categories_run || [];\n      const duration = parsed.duration_seconds || 0;\n      \n      return [{\n        json: {\n          status: parsed.status || 'unknown',\n          categories: categories.join(', '),\n          count: categories.length,\n          duration: `${duration}초`,\n          timestamp: parsed.timestamp,\n        }\n      }];\n    }\n  } catch (e) {\n    // JSON 파싱 실패해도 로그는 남김\n  }\n}\n\nreturn [{ json: { status: 'completed', note: 'See exit code for details', exitCode: $json.exitCode } }];\n"
+      }
+    },
+    {
+      "id": "skip-output",
+      "name": "⏭️ SKIP (로그만)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1050, 400],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "schedule-trigger": {
+      "main": [
+        [{ "node": "random-runner", "type": "main", "index": 0 }]
+      ]
+    },
+    "random-runner": {
+      "main": [
+        [{ "node": "if-run-check", "type": "main", "index": 0 }]
+      ]
+    },
+    "if-run-check": {
+      "main": [
+        [{ "node": "execute-test", "type": "main", "index": 0 }],
+        [{ "node": "skip-output", "type": "main", "index": 0 }]
+      ]
+    },
+    "execute-test": {
+      "main": [
+        [{ "node": "parse-result", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["F5", "AWAF", "Security", "WAF Testing"],
+  "versionId": "1.0.0"
+}

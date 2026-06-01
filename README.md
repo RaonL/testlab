@@ -345,6 +345,70 @@ done
 
 ---
 
+## ⏱️ 장기 테스트 자동화 (n8n 연동)
+
+실제 운영 환경(transparent 모드, 장기간)을 시뮬레이션하기 위해 **n8n 워크플로우** 또는 **독립 실행형 스케줄러**를 사용할 수 있습니다.
+
+> **목적**: 단발성 325개 테스트가 아닌, 수주간 지속적으로 랜덤 공격을 주입하여 WAF 장기 탐지 성능 검증
+
+### 옵션 1: n8n 워크플로우 (권장)
+
+`n8n-workflow.json` 파일을 n8n에 임포트하여 사용합니다.
+
+#### n8n 워크플로우 구조
+```
+⏰ Schedule Trigger (15분 간격)
+        ↓
+🎲 랜덤 실행 결정 (70% 확률로 실행, 30% SKIP)
+        ↓
+🔀 실행 여부 체크
+   ┌─────┴─────┐
+   YES         NO
+   ↓            ↓
+🐍 스크립트 실행  ⏭️ SKIP
+   ↓
+📊 결과 파싱/기록
+```
+
+#### n8n 설정 방법
+```bash
+# 1. n8n 대시보드 접속
+# 2. Workflows → Import from File
+# 3. n8n-workflow.json 선택
+# 4. Execute Command 노드에서 경로 수정:
+#    cd /path/to/f5-awaf-testlab-factory && python scripts/scheduled_attack_runner.py --mode once
+# 5. Activate workflow
+```
+
+#### n8n 동작 방식
+| 항목 | 설정 |
+|------|------|
+| 실행 간격 | 15분 (cron: `*/15 * * * *`) |
+| 실제 실행 확률 | 70% (랜덤 SKIP으로 패턴 파괴) |
+| 1회 실행 카테고리 | 가중치 기반 1~3개 랜덤 선택 |
+| 반복 횟수 | 기본 1회, 가끔 2회 (가변) |
+| 예상 하루 실행 | ≈ 24시간 ÷ 15분 × 70% ≈ 67회 |
+| 예상 하루 테스트 | ≈ 67회 × 평균 2카테고리 × 50개 ≈ **6,700건/일** |
+
+### 옵션 2: Python 독립 스케줄러
+
+```bash
+# 무한 루프 스케줄러 실행 (15~45분 랜덤 간격)
+python scripts/scheduled_attack_runner.py --mode daemon
+```
+
+### 옵션 3: 단발성 n8n 연동 (워크플로우 테스트)
+
+```bash
+# 1회 실행 후 JSON 결과 반환 (n8n Execute Command에서 호출)
+python scripts/scheduled_attack_runner.py --mode once
+
+# 특정 카테고리만 1회 실행
+python scripts/scheduled_attack_runner.py --mode once --category sqli --category xss
+```
+
+---
+
 ## ⚠️ 문제 해결 - WAF 정책 파일 업로드
 
 Step 02 실행 시 "WAF 정책 파일 업로드" 단계에서 실패하면 아래 방법으로 수동 업로드 후 다시 실행하세요.
