@@ -22,8 +22,6 @@ WAF 보안 정책을 BIG-IP에 배포합니다.
 import sys
 import json
 import time
-import re
-import base64
 import logging
 from pathlib import Path
 
